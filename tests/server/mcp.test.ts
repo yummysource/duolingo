@@ -15,6 +15,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { registerAccountTools } from '../../src/tools/account.js';
 import { registerLanguageTools } from '../../src/tools/language.js';
+import { registerReviewTools } from '../../src/tools/review.js';
 import { registerShopTools } from '../../src/tools/shop.js';
 import * as duolingoModule from '../../src/client/duolingo.js';
 import type { DuolingoClient } from '../../src/client/duolingo.js';
@@ -161,6 +162,7 @@ async function createMcpPair(): Promise<{
   const server = new McpServer({ name: 'duolingo_mcp', version: '1.0.0' });
   registerAccountTools(server);
   registerLanguageTools(server);
+  registerReviewTools(server);
   registerShopTools(server);
 
   const [serverTransport, clientTransport] =
@@ -266,6 +268,9 @@ describe('MCP Server: tool discovery', () => {
       'duolingo_get_languages',
       'duolingo_get_leaderboard',
       'duolingo_get_learned_skills',
+      'duolingo_get_practice_sentences',
+      'duolingo_get_recent_learning',
+      'duolingo_get_review_material',
       'duolingo_get_reviewable_topics',
       'duolingo_get_settings',
       'duolingo_get_shop_items',

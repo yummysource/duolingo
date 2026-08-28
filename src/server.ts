@@ -20,6 +20,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { registerAccountTools } from './tools/account.js';
 import { registerLanguageTools } from './tools/language.js';
+import { registerReviewTools } from './tools/review.js';
 import { registerShopTools } from './tools/shop.js';
 
 const server = new McpServer(
@@ -41,6 +42,7 @@ const server = new McpServer(
 
 registerAccountTools(server);
 registerLanguageTools(server);
+registerReviewTools(server);
 registerShopTools(server);
 
 const transport = new StdioServerTransport();
