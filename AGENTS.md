@@ -7,11 +7,88 @@ MCP SDK with stdio transport, Zod for input validation, and Axios for HTTP.
 
 ## Project Overview
 
-- **Entry points:** `src/server.ts` (MCP binary), `src/index.ts` (library)
-- **Auth:** `DUOLINGO_USERNAME` + `DUOLINGO_JWT` environment variables
+- **Entry points:** `src/cli.ts` (CLI), `src/server.ts` (MCP binary),
+  `src/index.ts` (library)
+- **Auth:** CLI system-keychain credentials or a complete
+  `DUOLINGO_USERNAME` + `DUOLINGO_JWT` environment pair
 - **Design:** Read-first; all tools are read-only (no writes to Duolingo)
 - **Tool naming:** `duolingo_<action>_<resource>` pattern (snake_case)
 - **Server name:** `duolingo_mcp`
+
+---
+
+## Using the CLI and Skill
+
+The agent-neutral `duolingo-learn` Skill should use `duolingo-cli` as its
+stable query interface. It does not require an MCP client or product-specific
+Agent configuration.
+
+Install or upgrade both components:
+
+```bash
+npm install -g @yummysource/duolingo-cli@latest
+npx skills add yummysource/duolingo -y -g
+```
+
+Authorization is interactive and only needs to be completed once:
+
+```bash
+duolingo-cli auth init
+duolingo-cli auth show
+duolingo-cli auth show --status
+```
+
+Before an automated query, run `duolingo-cli --version` and
+`duolingo-cli auth show --status`. If authorization is missing or expired, ask
+the user to run `duolingo-cli auth init` in their own terminal. Never ask for,
+print, log, or commit a JWT. Do not pass a JWT as a command argument.
+
+Use `--json` when an Agent will filter, combine, or summarize results. Empty
+arrays are valid query results; exit code `0` means success and exit code `1`
+means authorization, validation, network, or API failure.
+
+### Read-only query commands
+
+```bash
+# Account and activity
+duolingo-cli account profile [--username USER] [--json]
+duolingo-cli account settings [--json]
+duolingo-cli account streak [--username USER] [--json]
+duolingo-cli account daily-xp [--json]
+duolingo-cli account calendar [--username USER] [--json]
+
+# Courses and social data
+duolingo-cli course list [--username USER] [--json]
+duolingo-cli social friends [--json]
+duolingo-cli social leaderboard [--unit week|month] [--json]
+
+# Account resources, shop, and goals
+duolingo-cli resource hearts [--json]
+duolingo-cli resource currencies [--json]
+duolingo-cli shop items [--json]
+duolingo-cli goal streak [--json]
+
+# Language learning
+duolingo-cli language list [--username USER] [--abbreviations] [--json]
+duolingo-cli language words --language LANG [--username USER] [--json]
+duolingo-cli language skills --language LANG [--username USER] [--json]
+
+# Review
+duolingo-cli review recent --language LANG [--days 1..90] [--json]
+duolingo-cli review sentences --language LANG [--from LANG] [--sessions 1..10] [--limit 1..100] [--json]
+duolingo-cli review material --language LANG [--from LANG] [--topics 1..20] [--sessions 1..10] [--limit 1..100] [--json]
+```
+
+Review sentences are current randomized practice samples, not exact historical
+lesson text. Requested sentence limits are maxima and deduplication may return
+fewer results. Every exposed CLI and Skill operation is read-only: it must not
+submit answers, change progress, spend currency, buy items, refill hearts, or
+modify goals.
+
+The maintained command reference is
+`skills/duolingo-learn/references/cli-commands.md`. Update the CLI parser,
+tests, Skill reference, user documentation, and this guideline together when
+the command surface changes.
 
 ---
 
