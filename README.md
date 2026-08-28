@@ -1,7 +1,8 @@
-# @udondan/duolingo
+# @yummysource/duolingo-cli
 
-A TypeScript package that provides both a **Duolingo API client library** and an
-**[MCP](https://modelcontextprotocol.io) server** for LLM agents (e.g. Claude).
+A TypeScript package that provides a read-only **Duolingo CLI**, a portable
+**Skill**, an **API client library**, and an
+**[MCP](https://modelcontextprotocol.io) server**.
 
 Built natively in TypeScript against the unofficial Duolingo REST API — no third-party
 Duolingo library dependency.
@@ -9,6 +10,8 @@ Duolingo library dependency.
 ## Table of Contents
 
 - [Getting Your JWT Token](#getting-your-jwt-token)
+- [CLI](#cli)
+- [Skill](#skill)
 - [MCP Server](#mcp-server)
   - [Installation](#mcp-installation)
   - [Claude Desktop](#claude-desktop)
@@ -24,7 +27,8 @@ Duolingo library dependency.
 
 ## Getting Your JWT Token
 
-Both the MCP server and the library require a Duolingo JWT token for authentication.
+Authenticated queries require a Duolingo username and JWT token. The CLI stores
+the JWT in the operating system's credential manager and never displays it.
 
 1. Log in to [duolingo.com](https://www.duolingo.com) in your browser.
 2. Open the browser developer console (F12 → Console tab).
@@ -34,7 +38,59 @@ Both the MCP server and the library require a Duolingo JWT token for authenticat
    ```
 4. Copy the output — that is your JWT token.
 
-> **Note**: JWT tokens expire. If you get authentication errors, repeat the steps above.
+> **Note**: JWT tokens expire. If authentication fails, repeat these steps and
+> run `duolingo-cli auth init` again. Never commit the token or paste it into chat.
+
+---
+
+## CLI
+
+Install the package and configure credentials once:
+
+```bash
+npm install -g @yummysource/duolingo-cli
+duolingo-cli auth init
+duolingo-cli auth show
+```
+
+`auth init` prompts interactively and hides JWT input. Complete
+`DUOLINGO_USERNAME` and `DUOLINGO_JWT` environment variables take precedence
+when both are set; partial environment credentials are rejected.
+
+Common read-only queries:
+
+```bash
+duolingo-cli account profile --json
+duolingo-cli language list --abbreviations --json
+duolingo-cli language words --language es --json
+duolingo-cli review recent --language es --days 7 --json
+duolingo-cli review sentences --language es --limit 10 --json
+duolingo-cli review material --language es --topics 5 --limit 10 --json
+```
+
+Run `duolingo-cli --help` for the complete command grammar. Recent XP activity
+can be mapped to skills and words, but it does not contain exact historical
+lesson sentences. Review sentences are current practice samples and may vary.
+
+---
+
+## Skill
+
+Install the agent-neutral `duolingo-learn` Skill from this repository:
+
+```bash
+npx skills add yummysource/duolingo -y -g
+```
+
+The Skill uses `duolingo-cli` only. It contains no Agent-specific metadata,
+runtime, or MCP configuration:
+
+```text
+skills/duolingo-learn/
+├── SKILL.md
+└── references/
+    └── cli-commands.md
+```
 
 ---
 
@@ -42,23 +98,22 @@ Both the MCP server and the library require a Duolingo JWT token for authenticat
 
 ### MCP Installation
 
-**Option A — run directly with npx (no install needed):**
+**Option A — use the installed CLI and stored credentials:**
 
 ```bash
-DUOLINGO_USERNAME=your_username DUOLINGO_JWT=your_jwt npx @udondan/duolingo
+duolingo-cli mcp
 ```
 
-**Option B — install globally:**
+**Option B — run without a global install:**
 
 ```bash
-npm install -g @udondan/duolingo
-DUOLINGO_USERNAME=your_username DUOLINGO_JWT=your_jwt duolingo-mcp
+npx --package @yummysource/duolingo-cli duolingo-cli mcp
 ```
 
 **Option C — clone and build from source:**
 
 ```bash
-git clone https://github.com/udondan/duolingo.git
+git clone https://github.com/yummysource/duolingo.git
 cd duolingo
 npm install && npm run build
 node dist/server.js
@@ -72,8 +127,8 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 {
   "mcpServers": {
     "duolingo": {
-      "command": "npx",
-      "args": ["-y", "@udondan/duolingo"],
+      "command": "duolingo-cli",
+      "args": ["mcp"],
       "env": {
         "DUOLINGO_USERNAME": "your_username",
         "DUOLINGO_JWT": "your_jwt_token"
@@ -86,7 +141,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ### Claude Code
 
 ```bash
-claude mcp add duolingo -- npx -y @udondan/duolingo
+claude mcp add duolingo -- duolingo-cli mcp
 ```
 
 Then set the environment variables before starting Claude Code:
@@ -133,6 +188,14 @@ All tools are **read-only** — the server never modifies your Duolingo account.
 | `duolingo_get_language_voices` | Available TTS voice names for a language |
 | `duolingo_get_audio_url` | Pronunciation audio URL for a word |
 
+#### Review
+
+| Tool | Description |
+|------|-------------|
+| `duolingo_get_recent_learning` | Recent XP activity mapped to skills and words |
+| `duolingo_get_practice_sentences` | Deduplicated current practice prompts, answers, tokens, and audio |
+| `duolingo_get_review_material` | Weak topics, vocabulary, and current practice samples |
+
 #### Utilities
 
 | Tool | Description |
@@ -147,13 +210,13 @@ All tools are **read-only** — the server never modifies your Duolingo account.
 ### Library Installation
 
 ```bash
-npm install @udondan/duolingo
+npm install @yummysource/duolingo-cli
 ```
 
 ### Quick Start
 
 ```typescript
-import { DuolingoClient } from '@udondan/duolingo';
+import { DuolingoClient } from '@yummysource/duolingo-cli';
 
 const client = new DuolingoClient('your_username', 'your_jwt_token');
 
@@ -294,7 +357,7 @@ import {
   DuolingoNotFoundError,
   DuolingoCaptchaError,
   DuolingoClientError,
-} from '@udondan/duolingo';
+} from '@yummysource/duolingo-cli';
 
 try {
   const data = await client.getUserData('someuser');
@@ -316,7 +379,7 @@ try {
 ## Development
 
 ```bash
-git clone https://github.com/udondan/duolingo.git
+git clone https://github.com/yummysource/duolingo.git
 cd duolingo
 npm install
 
@@ -342,8 +405,11 @@ npm run dev
 
 ```
 src/
+├── cli.ts             # duolingo-cli entry point
 ├── index.ts           # Library entry point — exports client, types, errors
-├── server.ts          # MCP server entry point (stdio transport)
+├── mcp.ts             # Shared MCP server factory
+├── server.ts          # duolingo-mcp stdio entry point
+├── cli/               # Commands, auth, prompts, and in-memory tool runner
 ├── client/
 │   ├── duolingo.ts    # DuolingoClient — all API methods
 │   ├── types.ts       # TypeScript interfaces for all API responses
@@ -351,8 +417,11 @@ src/
 └── tools/
     ├── account.ts     # Account tools (13)
     ├── language.ts    # Language tools (11)
+    ├── review.ts      # Review tools (3)
     ├── shop.ts        # Utility tools (2)
     └── helpers.ts     # Shared utilities (error handling, Zod schemas)
+skills/
+└── duolingo-learn/    # Portable CLI Skill and command reference
 ```
 
 ### API Versions Used
