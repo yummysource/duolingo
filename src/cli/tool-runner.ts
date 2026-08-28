@@ -1,7 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { resetClient } from '../client/duolingo.js';
-import { createDuolingoMcpServer } from '../mcp.js';
+import { createDuolingoMcpServer, DUOLINGO_SERVER_VERSION } from '../mcp.js';
 import type { DuolingoCredentials } from './credentials.js';
 
 export class CliToolError extends Error {
@@ -53,7 +53,10 @@ export async function runMcpTool(
   const server = createDuolingoMcpServer();
   const [serverTransport, clientTransport] =
     InMemoryTransport.createLinkedPair();
-  const client = new Client({ name: 'duolingo-cli', version: '1.0.0' });
+  const client = new Client({
+    name: 'duolingo-cli',
+    version: DUOLINGO_SERVER_VERSION,
+  });
 
   try {
     await Promise.all([

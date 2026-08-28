@@ -1,5 +1,5 @@
 import { PassThrough, Readable } from 'node:stream';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { promptSecret, promptText } from '../../src/cli/prompts.js';
 
 function capture(stream: PassThrough): string {
@@ -27,5 +27,17 @@ describe('CLI prompts', () => {
     const rendered = capture(output);
     expect(rendered).toContain('JWT: ');
     expect(rendered).not.toContain('jwt-secret');
+  });
+
+  it('pauses the input stream after reading a secret', async () => {
+    const input = new PassThrough();
+    const output = new PassThrough();
+    const pause = vi.spyOn(input, 'pause');
+    const result = promptSecret('JWT: ', input, output);
+
+    input.write('jwt-secret\n');
+
+    await expect(result).resolves.toBe('jwt-secret');
+    expect(pause).toHaveBeenCalledOnce();
   });
 });

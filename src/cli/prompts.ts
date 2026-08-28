@@ -48,6 +48,7 @@ export async function promptSecret(
       input.off('data', onData);
       input.off('end', onEnd);
       input.off('error', onError);
+      input.pause();
       setRawMode?.(false);
     };
     const finish = (): void => {
