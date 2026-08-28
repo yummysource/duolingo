@@ -1,7 +1,7 @@
 /**
  * Package export tests.
  *
- * These tests verify that the public API surface of @udondan/duolingo is
+ * These tests verify that the public API surface of @yummysource/duolingo-cli is
  * correct and stable. They import exclusively from the package entry point
  * (src/index.ts) — never from internal paths — to catch any accidental
  * omissions or regressions in what the package exposes.

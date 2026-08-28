@@ -1,12 +1,13 @@
 /**
- * @udondan/duolingo — public library API
+ * @yummysource/duolingo-cli — public library API
  *
  * Use this entry point when importing the package as a library:
  *
- *   import { DuolingoClient } from '@udondan/duolingo';
+ *   import { DuolingoClient } from '@yummysource/duolingo-cli';
  *
  * For the MCP server binary, use the `duolingo-mcp` CLI (installed via
- * `npm install -g @udondan/duolingo`) or the `@udondan/duolingo/server` export.
+ * `npm install -g @yummysource/duolingo-cli`) or the
+ * `@yummysource/duolingo-cli/server` export.
  */
 
 // Client class and singleton helpers
