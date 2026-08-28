@@ -1,14 +1,21 @@
-# @udondan/duolingo
+# @yummysource/duolingo-cli
 
-A TypeScript package that provides both a **Duolingo API client library** and an
-**[MCP](https://modelcontextprotocol.io) server** for LLM agents (e.g. Claude).
+[English](README.md) | [繁體中文](README.zh-TW.md)
+
+A TypeScript package that provides a read-only **Duolingo CLI**, a portable
+**Skill**, an **API client library**, and an
+**[MCP](https://modelcontextprotocol.io) server**.
 
 Built natively in TypeScript against the unofficial Duolingo REST API — no third-party
 Duolingo library dependency.
 
 ## Table of Contents
 
+- [Choose an Interface](#choose-an-interface)
+- [Quick Start by Scenario](#quick-start-by-scenario)
 - [Getting Your JWT Token](#getting-your-jwt-token)
+- [CLI](#cli)
+- [Skill](#skill)
 - [MCP Server](#mcp-server)
   - [Installation](#mcp-installation)
   - [Claude Desktop](#claude-desktop)
@@ -20,45 +27,166 @@ Duolingo library dependency.
   - [API Reference](#api-reference)
 - [Development](#development)
 
+## Choose an Interface
+
+All four interfaces use the same TypeScript client and unofficial Duolingo API.
+Choose the thinnest layer that matches the job:
+
+| Interface | Best for                                             | Setup                                                | Output                     |
+| --------- | ---------------------------------------------------- | ---------------------------------------------------- | -------------------------- |
+| API       | TypeScript applications and custom data pipelines    | Install the package and instantiate `DuolingoClient` | Typed objects              |
+| CLI       | People, shell scripts, CI jobs, and local automation | Install `duolingo-cli`, then run `auth init` once    | Markdown or JSON           |
+| Skill     | Cross-agent natural-language learning workflows      | Install the CLI and `duolingo-learn` Skill           | Agent-selected CLI results |
+| MCP       | MCP-compatible clients and existing tool workflows   | Start `duolingo-cli mcp`                             | MCP tool responses         |
+
+Every provided operation is read-only. The project does not submit answers,
+purchase items, alter progress, or modify account settings.
+
+## Quick Start by Scenario
+
+### Review what you learned recently
+
+```bash
+npm install -g @yummysource/duolingo-cli
+duolingo-cli auth init
+duolingo-cli review recent --language es --days 7 --json
+duolingo-cli review material --language es --limit 10 --json
+```
+
+### Add Duolingo to an automation agent
+
+```bash
+npx skills add yummysource/duolingo -y -g
+```
+
+Then ask for a task such as “summarize my Spanish learning from the last seven
+days and prepare up to ten review sentences.” The Skill checks authorization,
+selects stable CLI commands, and explains the limits of Duolingo's activity
+data.
+
+### Use the TypeScript API
+
+```typescript
+import { DuolingoClient } from '@yummysource/duolingo-cli';
+
+const client = new DuolingoClient(username, jwt);
+const profile = await client.getUserData();
+console.log(profile.site_streak);
+```
+
+### Connect an MCP client
+
+```bash
+duolingo-cli mcp
+```
+
+Detailed guides:
+
+- [API guide](docs/guides/api.md)
+- [CLI guide](docs/guides/cli.md)
+- [Skill guide](docs/guides/skill.md)
+- [MCP guide](docs/guides/mcp.md)
+
 ---
 
 ## Getting Your JWT Token
 
-Both the MCP server and the library require a Duolingo JWT token for authentication.
+Authenticated queries require a Duolingo username and JWT token. The CLI stores
+the JWT in the operating system's credential manager and never displays it.
 
 1. Log in to [duolingo.com](https://www.duolingo.com) in your browser.
 2. Open the browser developer console (F12 → Console tab).
 3. Run:
    ```js
-   document.cookie.match(new RegExp('(^| )jwt_token=([^;]+)'))[0].slice(11)
+   document.cookie.match(new RegExp('(^| )jwt_token=([^;]+)'))[0].slice(11);
    ```
 4. Copy the output — that is your JWT token.
 
-> **Note**: JWT tokens expire. If you get authentication errors, repeat the steps above.
+> **Note**: JWT tokens expire. If authentication fails, repeat these steps and
+> run `duolingo-cli auth init` again. Never commit the token or paste it into chat.
+
+---
+
+## CLI
+
+See the [complete CLI guide](docs/guides/cli.md) for command parameters, output
+contracts, exit codes, credential precedence, and scenario-based examples.
+
+Install the package and configure credentials once:
+
+```bash
+npm install -g @yummysource/duolingo-cli
+duolingo-cli auth init
+duolingo-cli auth show
+```
+
+`auth init` prompts interactively and hides JWT input. Complete
+`DUOLINGO_USERNAME` and `DUOLINGO_JWT` environment variables take precedence
+when both are set; partial environment credentials are rejected.
+
+Common read-only queries:
+
+```bash
+duolingo-cli account profile --json
+duolingo-cli language list --abbreviations --json
+duolingo-cli language words --language es --json
+duolingo-cli review recent --language es --days 7 --json
+duolingo-cli review sentences --language es --limit 10 --json
+duolingo-cli review material --language es --topics 5 --limit 10 --json
+```
+
+Run `duolingo-cli --help` for the complete command grammar. Recent XP activity
+can be mapped to skills and words, but it does not contain exact historical
+lesson sentences. Review sentences are current practice samples and may vary.
+
+---
+
+## Skill
+
+See the [complete Skill guide](docs/guides/skill.md) for installation,
+cross-agent behavior, example requests, and security boundaries.
+
+Install the agent-neutral `duolingo-learn` Skill from this repository:
+
+```bash
+npx skills add yummysource/duolingo -y -g
+```
+
+The Skill uses `duolingo-cli` only. It contains no Agent-specific metadata,
+runtime, or MCP configuration:
+
+```text
+skills/duolingo-learn/
+├── SKILL.md
+└── references/
+    └── cli-commands.md
+```
 
 ---
 
 ## MCP Server
 
+See the [complete MCP guide](docs/guides/mcp.md) for transport setup,
+authentication choices, client configuration, tool groups, and inspection.
+
 ### MCP Installation
 
-**Option A — run directly with npx (no install needed):**
+**Option A — use the installed CLI and stored credentials:**
 
 ```bash
-DUOLINGO_USERNAME=your_username DUOLINGO_JWT=your_jwt npx @udondan/duolingo
+duolingo-cli mcp
 ```
 
-**Option B — install globally:**
+**Option B — run without a global install:**
 
 ```bash
-npm install -g @udondan/duolingo
-DUOLINGO_USERNAME=your_username DUOLINGO_JWT=your_jwt duolingo-mcp
+npx --package @yummysource/duolingo-cli duolingo-cli mcp
 ```
 
 **Option C — clone and build from source:**
 
 ```bash
-git clone https://github.com/udondan/duolingo.git
+git clone https://github.com/yummysource/duolingo.git
 cd duolingo
 npm install && npm run build
 node dist/server.js
@@ -66,18 +194,15 @@ node dist/server.js
 
 ### Claude Desktop
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+Run `duolingo-cli auth init`, then add this to
+`~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "duolingo": {
-      "command": "npx",
-      "args": ["-y", "@udondan/duolingo"],
-      "env": {
-        "DUOLINGO_USERNAME": "your_username",
-        "DUOLINGO_JWT": "your_jwt_token"
-      }
+      "command": "duolingo-cli",
+      "args": ["mcp"]
     }
   }
 }
@@ -85,11 +210,13 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ### Claude Code
 
+After `duolingo-cli auth init`, register the stored-credential command:
+
 ```bash
-claude mcp add duolingo -- npx -y @udondan/duolingo
+claude mcp add duolingo -- duolingo-cli mcp
 ```
 
-Then set the environment variables before starting Claude Code:
+For CI or externally managed secrets, set both environment variables instead:
 
 ```bash
 export DUOLINGO_USERNAME="your_username"
@@ -102,58 +229,69 @@ All tools are **read-only** — the server never modifies your Duolingo account.
 
 #### Account
 
-| Tool | Description |
-|------|-------------|
-| `duolingo_get_user_info` | Profile: username, name, bio, location, avatar, followers, learning language |
-| `duolingo_get_settings` | Notification and account settings |
-| `duolingo_get_streak_info` | Current streak, longest streak, daily goal, extended today |
-| `duolingo_get_daily_xp_progress` | XP goal, XP earned today, lessons completed today |
-| `duolingo_get_languages` | Languages being learned (full names or abbreviations) |
-| `duolingo_get_courses` | All courses including Math, Chess, and Music with XP per course |
-| `duolingo_get_friends` | Users the authenticated user follows, with total XP |
-| `duolingo_get_calendar` | Recent activity calendar for the current course (~last 2 weeks) |
-| `duolingo_get_leaderboard` | Authenticated user's friends sorted by XP for week or month |
-| `duolingo_get_shop_items` | Full shop catalogue with prices and item types |
-| `duolingo_get_health` | Current hearts count, max hearts, refill timing |
-| `duolingo_get_currencies` | Gem and lingot balances |
-| `duolingo_get_streak_goal` | Current streak goal with upcoming checkpoints |
+| Tool                             | Description                                                                  |
+| -------------------------------- | ---------------------------------------------------------------------------- |
+| `duolingo_get_user_info`         | Profile: username, name, bio, location, avatar, followers, learning language |
+| `duolingo_get_settings`          | Notification and account settings                                            |
+| `duolingo_get_streak_info`       | Current streak, longest streak, daily goal, extended today                   |
+| `duolingo_get_daily_xp_progress` | XP goal, XP earned today, lessons completed today                            |
+| `duolingo_get_languages`         | Languages being learned (full names or abbreviations)                        |
+| `duolingo_get_courses`           | All courses including Math, Chess, and Music with XP per course              |
+| `duolingo_get_friends`           | Users the authenticated user follows, with total XP                          |
+| `duolingo_get_calendar`          | Recent activity calendar for the current course (~last 2 weeks)              |
+| `duolingo_get_leaderboard`       | Authenticated user's friends sorted by XP for week or month                  |
+| `duolingo_get_shop_items`        | Full shop catalogue with prices and item types                               |
+| `duolingo_get_health`            | Current hearts count, max hearts, refill timing                              |
+| `duolingo_get_currencies`        | Gem and lingot balances                                                      |
+| `duolingo_get_streak_goal`       | Current streak goal with upcoming checkpoints                                |
 
 #### Language
 
-| Tool | Description |
-|------|-------------|
-| `duolingo_get_language_details` | Level, points, streak for a specific language |
+| Tool                             | Description                                               |
+| -------------------------------- | --------------------------------------------------------- |
+| `duolingo_get_language_details`  | Level, points, streak for a specific language             |
 | `duolingo_get_language_progress` | Detailed progress: level %, points to next level, fluency |
-| `duolingo_get_known_topics` | Learned topic/skill names |
-| `duolingo_get_unknown_topics` | Not-yet-learned topics |
-| `duolingo_get_golden_topics` | Fully mastered topics (strength = 1.0) |
-| `duolingo_get_reviewable_topics` | Learned but not fully mastered topics |
-| `duolingo_get_known_words` | Set of known words for a language |
-| `duolingo_get_learned_skills` | Full skill objects sorted by learning order |
-| `duolingo_get_language_voices` | Available TTS voice names for a language |
-| `duolingo_get_audio_url` | Pronunciation audio URL for a word |
+| `duolingo_get_known_topics`      | Learned topic/skill names                                 |
+| `duolingo_get_unknown_topics`    | Not-yet-learned topics                                    |
+| `duolingo_get_golden_topics`     | Fully mastered topics (strength = 1.0)                    |
+| `duolingo_get_reviewable_topics` | Learned but not fully mastered topics                     |
+| `duolingo_get_known_words`       | Set of known words for a language                         |
+| `duolingo_get_learned_skills`    | Full skill objects sorted by learning order               |
+| `duolingo_get_language_voices`   | Available TTS voice names for a language                  |
+| `duolingo_get_audio_url`         | Pronunciation audio URL for a word                        |
+
+#### Review
+
+| Tool                              | Description                                                       |
+| --------------------------------- | ----------------------------------------------------------------- |
+| `duolingo_get_recent_learning`    | Recent XP activity mapped to skills and words                     |
+| `duolingo_get_practice_sentences` | Deduplicated current practice prompts, answers, tokens, and audio |
+| `duolingo_get_review_material`    | Weak topics, vocabulary, and current practice samples             |
 
 #### Utilities
 
-| Tool | Description |
-|------|-------------|
+| Tool                              | Description                                                       |
+| --------------------------------- | ----------------------------------------------------------------- |
 | `duolingo_get_language_from_abbr` | Convert language abbreviation to full name (e.g. `fr` → `French`) |
-| `duolingo_get_abbreviation_of` | Convert full language name to abbreviation (e.g. `French` → `fr`) |
+| `duolingo_get_abbreviation_of`    | Convert full language name to abbreviation (e.g. `French` → `fr`) |
 
 ---
 
 ## Library
 
+See the [complete API guide](docs/guides/api.md) for authentication, method
+groups, caching, error handling, and review-data composition.
+
 ### Library Installation
 
 ```bash
-npm install @udondan/duolingo
+npm install @yummysource/duolingo-cli
 ```
 
 ### Quick Start
 
 ```typescript
-import { DuolingoClient } from '@udondan/duolingo';
+import { DuolingoClient } from '@yummysource/duolingo-cli';
 
 const client = new DuolingoClient('your_username', 'your_jwt_token');
 
@@ -177,7 +315,7 @@ for (const friend of friends) {
 
 // Get shop items
 const items = await client.getShopItems();
-const streakFreeze = items.find(i => i.id === 'streak_freeze');
+const streakFreeze = items.find((i) => i.id === 'streak_freeze');
 
 // Get hearts
 const health = await client.getHealth();
@@ -216,13 +354,13 @@ const id = await client.getUserIdByUsername('someuser');
 const v2 = await client.getUserDataV2(userId);
 
 // All courses
-v2.courses;  // DuolingoCourse[]
+v2.courses; // DuolingoCourse[]
 
 // Filter by subject
-const langCourses  = v2.courses.filter(c => c.subject === 'language');
-const mathCourses  = v2.courses.filter(c => c.subject === 'math');
-const chessCourses = v2.courses.filter(c => c.subject === 'chess');
-const musicCourses = v2.courses.filter(c => c.subject === 'music');
+const langCourses = v2.courses.filter((c) => c.subject === 'language');
+const mathCourses = v2.courses.filter((c) => c.subject === 'math');
+const chessCourses = v2.courses.filter((c) => c.subject === 'chess');
+const musicCourses = v2.courses.filter((c) => c.subject === 'music');
 ```
 
 Each course has: `id`, `subject`, `topic`, `xp`, `fromLanguage`.
@@ -231,7 +369,11 @@ Language courses also have: `learningLanguage`, `title`, `authorId`.
 #### Daily XP Progress
 
 ```typescript
-const progress = await client.getUserDataById(userId, ['xpGoal', 'xpGains', 'streakData']);
+const progress = await client.getUserDataById(userId, [
+  'xpGoal',
+  'xpGains',
+  'streakData',
+]);
 // progress.xpGoal    — daily XP goal
 // progress.xpGains   — array of { xp, skillId, time } for recent lessons
 // progress.streakData.updatedTimestamp — last streak update
@@ -278,7 +420,7 @@ const options = await client.getStreakGoalNextOptions();
 
 ```typescript
 // Discover available voices for a language
-const voices = await client.getLanguageVoices('es');  // ['beaes', 'juniores', ...]
+const voices = await client.getLanguageVoices('es'); // ['beaes', 'juniores', ...]
 
 // Build an audio URL
 const url = await client.buildAudioUrl('hola', 'es');
@@ -294,7 +436,7 @@ import {
   DuolingoNotFoundError,
   DuolingoCaptchaError,
   DuolingoClientError,
-} from '@udondan/duolingo';
+} from '@yummysource/duolingo-cli';
 
 try {
   const data = await client.getUserData('someuser');
@@ -316,7 +458,7 @@ try {
 ## Development
 
 ```bash
-git clone https://github.com/udondan/duolingo.git
+git clone https://github.com/yummysource/duolingo.git
 cd duolingo
 npm install
 
@@ -342,8 +484,11 @@ npm run dev
 
 ```
 src/
+├── cli.ts             # duolingo-cli entry point
 ├── index.ts           # Library entry point — exports client, types, errors
-├── server.ts          # MCP server entry point (stdio transport)
+├── mcp.ts             # Shared MCP server factory
+├── server.ts          # duolingo-mcp stdio entry point
+├── cli/               # Commands, auth, prompts, and in-memory tool runner
 ├── client/
 │   ├── duolingo.ts    # DuolingoClient — all API methods
 │   ├── types.ts       # TypeScript interfaces for all API responses
@@ -351,20 +496,23 @@ src/
 └── tools/
     ├── account.ts     # Account tools (13)
     ├── language.ts    # Language tools (11)
+    ├── review.ts      # Review tools (3)
     ├── shop.ts        # Utility tools (2)
     └── helpers.ts     # Shared utilities (error handling, Zod schemas)
+skills/
+└── duolingo-learn/    # Portable CLI Skill and command reference
 ```
 
 ### API Versions Used
 
-| Endpoint | API Version | Used For |
-|----------|-------------|----------|
-| `/users/<username>` | Legacy | User profile, language data, skills, calendar |
-| `/2023-05-23/users/{id}` | Current | Courses (all subjects), streak, health, gems |
-| `/2023-05-23/friends/users/{id}/following` | Current | Friends, leaderboard |
-| `/2023-05-23/shop-items` | Current | Shop catalogue |
-| `/users/{id}/streak-goal-current` | Current | Streak goals |
-| `/2017-06-30/sessions` | Current | TTS voice discovery |
+| Endpoint                                   | API Version | Used For                                      |
+| ------------------------------------------ | ----------- | --------------------------------------------- |
+| `/users/<username>`                        | Legacy      | User profile, language data, skills, calendar |
+| `/2023-05-23/users/{id}`                   | Current     | Courses (all subjects), streak, health, gems  |
+| `/2023-05-23/friends/users/{id}/following` | Current     | Friends, leaderboard                          |
+| `/2023-05-23/shop-items`                   | Current     | Shop catalogue                                |
+| `/users/{id}/streak-goal-current`          | Current     | Streak goals                                  |
+| `/2017-06-30/sessions`                     | Current     | TTS voice discovery                           |
 
 ---
 

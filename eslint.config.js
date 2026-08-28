@@ -25,6 +25,7 @@ export default defineConfig(
             'vitest.config.ts',
             'tests/helpers.ts',
             'tests/client/*.ts',
+            'tests/cli/*.ts',
             'tests/tools/*.ts',
             'tests/integration/*.ts',
             'tests/package/*.ts',
