@@ -30,6 +30,7 @@ import type {
   DuolingoSessionResponse,
   DuolingoCurrentCourse,
   DuolingoLearnedLexeme,
+  DuolingoLearnedLexemeOptions,
   DuolingoLearnedLexemesResponse,
 } from './types.js';
 
@@ -156,9 +157,18 @@ export class DuolingoClient {
     languageAbbr: string,
     fromLanguage: string,
     userId?: number,
+    options: DuolingoLearnedLexemeOptions = {},
   ): Promise<DuolingoLearnedLexeme[]> {
+    const sortBy = options.sortBy ?? 'ALPHABETICAL';
+    const limit = options.limit;
+    if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) {
+      throw new RangeError('Learned lexeme limit must be a positive integer.');
+    }
+
     const resolvedUserId = userId ?? (await this.getUserData()).id;
-    const cacheKey = `${resolvedUserId}:${languageAbbr}:${fromLanguage}`;
+    const cacheKey =
+      `${resolvedUserId}:${languageAbbr}:${fromLanguage}:` +
+      `${sortBy}:${limit ?? 'all'}`;
     const cached = this.learnedLexemesCache.get(cacheKey);
     if (cached !== undefined) return [...cached];
 
@@ -167,18 +177,37 @@ export class DuolingoClient {
     const learnedLexemes: DuolingoLearnedLexeme[] = [];
     let startIndex = 0;
 
-    do {
+    while (limit === undefined || learnedLexemes.length < limit) {
+      const requestLimit = Math.min(
+        100,
+        limit === undefined ? 100 : limit - learnedLexemes.length,
+      );
       const url =
         `${BASE_URL}/2017-06-30/users/${resolvedUserId}/courses/` +
         `${encodeURIComponent(languageAbbr)}/${encodeURIComponent(fromLanguage)}/` +
-        `learned-lexemes?sortBy=ALPHABETICAL&startIndex=${startIndex}`;
+        `learned-lexemes?limit=${requestLimit}&sortBy=${sortBy}&startIndex=${startIndex}`;
       const response = await this.makeRequest<DuolingoLearnedLexemesResponse>(
         url,
-        { lastTotalLexemeCount: 0, progressedSkills },
+        { lastTimeLearnedAt: null, progressedSkills },
       );
-      learnedLexemes.push(...response.learnedLexemes);
-      startIndex = response.pagination.nextStartIndex;
-    } while (startIndex > 0);
+      const remaining =
+        limit === undefined ? undefined : limit - learnedLexemes.length;
+      learnedLexemes.push(
+        ...(remaining === undefined
+          ? response.learnedLexemes
+          : response.learnedLexemes.slice(0, remaining)),
+      );
+
+      const nextStartIndex = response.pagination.nextStartIndex;
+      if (
+        nextStartIndex === null ||
+        nextStartIndex <= startIndex ||
+        response.learnedLexemes.length === 0
+      ) {
+        break;
+      }
+      startIndex = nextStartIndex;
+    }
 
     this.learnedLexemesCache.set(cacheKey, learnedLexemes);
     return [...learnedLexemes];
@@ -539,32 +568,43 @@ export class DuolingoClient {
     finishedSessions: number;
     skillId: { id: string };
   }[] {
-    const progressedSkills: {
-      finishedLevels: number;
-      finishedSessions: number;
-      skillId: { id: string };
-    }[] = [];
+    const progressedSkills = new Map<
+      string,
+      {
+        finishedLevels: number;
+        finishedSessions: number;
+        skillId: { id: string };
+      }
+    >();
+    const completedStates = new Set(['completed', 'legendary', 'passed']);
 
     for (const section of currentCourse.pathSectioned) {
-      for (const unit of section.units.slice(0, section.completedUnits)) {
+      for (const unit of section.units) {
         for (const level of unit.levels) {
           if (level.type === 'chest' || level.type === 'unit_review') continue;
-          const skillIds =
-            level.pathLevelClientData.skillId !== undefined
-              ? [level.pathLevelClientData.skillId]
-              : (level.pathLevelClientData.skillIds ?? []);
+          const skillIds = new Set<string>();
+          for (const data of [
+            level.pathLevelMetadata,
+            level.pathLevelClientData,
+          ]) {
+            if (data?.skillId !== undefined) skillIds.add(data.skillId);
+            for (const skillId of data?.skillIds ?? []) skillIds.add(skillId);
+          }
           for (const skillId of skillIds) {
-            progressedSkills.push({
-              finishedLevels: 1,
-              finishedSessions: level.finishedSessions,
+            const progress = progressedSkills.get(skillId) ?? {
+              finishedLevels: 0,
+              finishedSessions: 0,
               skillId: { id: skillId },
-            });
+            };
+            if (completedStates.has(level.state)) progress.finishedLevels += 1;
+            progress.finishedSessions += level.finishedSessions;
+            progressedSkills.set(skillId, progress);
           }
         }
       }
     }
 
-    return progressedSkills;
+    return [...progressedSkills.values()];
   }
 
   /**

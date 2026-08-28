@@ -221,8 +221,13 @@ describe('Language Tools', () => {
       invalidateCache: vi.fn(),
       getCurrentCourse: vi.fn().mockResolvedValue(PATH_COURSE),
       getLearnedLexemes: vi.fn().mockResolvedValue([
-        { text: '日本', translations: ['Japan'] },
-        { text: '学生', translations: ['student'] },
+        {
+          text: '日本',
+          translations: ['Japan'],
+          audioURL: 'https://example.com/nihon.mp3',
+          isNew: false,
+        },
+        { text: '学生', translations: ['student'], isNew: true },
       ]),
     };
 
@@ -442,6 +447,62 @@ describe('Language Tools', () => {
       const parsed = JSON.parse(result);
       expect(parsed).toContain('bonjour');
       expect(parsed).not.toContain('rouge');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // duolingo_get_recent_words
+  // -------------------------------------------------------------------------
+  describe('duolingo_get_recent_words', () => {
+    it('returns newest learned lexemes in Duolingo learned-date order', async () => {
+      vi.mocked(mockClient.getUserData!).mockResolvedValue(PATH_USER_DATA);
+
+      const result = await callTool(server, 'duolingo_get_recent_words', {
+        language_abbr: 'ja',
+        limit: 2,
+        response_format: 'json',
+      });
+
+      expect(JSON.parse(result)).toEqual({
+        language: 'ja',
+        order: 'learned_date',
+        count: 2,
+        words: [
+          {
+            rank: 1,
+            text: '日本',
+            translations: ['Japan'],
+            audio_url: 'https://example.com/nihon.mp3',
+            is_new: false,
+          },
+          {
+            rank: 2,
+            text: '学生',
+            translations: ['student'],
+            audio_url: null,
+            is_new: true,
+          },
+        ],
+        note: 'Ordered newest first by Duolingo learned-date ranking; exact learned timestamps are not exposed.',
+      });
+      expect(mockClient.getLearnedLexemes).toHaveBeenCalledWith(
+        'ja',
+        'zh-CN',
+        12345,
+        { sortBy: 'LEARNED_DATE', limit: 2 },
+      );
+    });
+
+    it('formats recent words as a numbered Markdown list', async () => {
+      vi.mocked(mockClient.getUserData!).mockResolvedValue(PATH_USER_DATA);
+
+      const result = await callTool(server, 'duolingo_get_recent_words', {
+        language_abbr: 'ja',
+      });
+
+      expect(result).toContain('# Recent Words (JA)');
+      expect(result).toContain('1. **日本** — Japan');
+      expect(result).toContain('Exact learned timestamps are not exposed');
     });
   });
 

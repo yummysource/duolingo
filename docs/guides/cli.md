@@ -96,10 +96,17 @@ or change streak goals.
 ```bash
 duolingo-cli language list [--username USER] [--abbreviations] [--json]
 duolingo-cli language words --language LANG [--username USER] [--json]
+duolingo-cli language recent-words --language LANG [--limit 1..100] [--username USER] [--json]
 duolingo-cli language skills --language LANG [--username USER] [--json]
 ```
 
 `LANG` is a course abbreviation such as `es`, `fr`, or `de`.
+
+`language recent-words` defaults to 10 and preserves Duolingo's newest-first
+learned-date ranking. Its JSON result includes `rank`, `text`, `translations`,
+`audio_url`, and `is_new`. Duolingo does not expose exact per-word timestamps,
+so this command cannot filter words learned within an exact date range. The
+requested language must be the account's active course.
 
 ### Review
 
@@ -153,6 +160,16 @@ duolingo-cli language words --language fr --json > french-words.json
 ```
 
 The redirected file contains the command result, never the stored JWT.
+
+### List the latest ten learned words
+
+```bash
+duolingo-cli language recent-words --language ja --limit 10 --json
+```
+
+The words are ordered newest first by Duolingo. Treat the ranking as recent
+learning order, not as proof that every word was learned during a particular
+calendar window.
 
 ### Inspect another public profile
 

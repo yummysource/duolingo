@@ -39,6 +39,12 @@ const words = await client.getLearnedLexemes(
   path.fromLanguage,
   legacy.id,
 );
+const latestWords = await client.getLearnedLexemes(
+  path.learningLanguage,
+  path.fromLanguage,
+  legacy.id,
+  { sortBy: 'LEARNED_DATE', limit: 10 },
+);
 
 console.log({
   username: legacy.username,
@@ -58,6 +64,11 @@ courses may leave its skills and words empty. `getCurrentCourse` supplies the
 active learning path and `getLearnedLexemes` supplies its vocabulary. The v2
 user endpoint contains richer course, subscription, streak, health, and
 currency fields.
+
+`getLearnedLexemes` defaults to alphabetical order and all pages for backward
+compatibility. Pass `{ sortBy: 'LEARNED_DATE', limit: 10 }` for newest-first
+vocabulary. Duolingo returns ordering but no exact learned timestamp for each
+lexeme.
 
 ## Public methods
 

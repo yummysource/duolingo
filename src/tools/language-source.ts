@@ -12,7 +12,7 @@ function flattenPathSkills(
   return skills.flatMap((skill) => (Array.isArray(skill) ? skill : [skill]));
 }
 
-function courseMatchesLanguage(
+export function courseMatchesLanguage(
   course: DuolingoCurrentCourse,
   languageAbbr: string,
 ): boolean {
@@ -29,10 +29,14 @@ function pathSkillsToLegacySkills(
   for (const section of course.pathSectioned) {
     for (const unit of section.units) {
       for (const level of unit.levels) {
-        const skillIds =
-          level.pathLevelClientData.skillId !== undefined
-            ? [level.pathLevelClientData.skillId]
-            : (level.pathLevelClientData.skillIds ?? []);
+        const skillIds = new Set<string>();
+        for (const data of [
+          level.pathLevelMetadata,
+          level.pathLevelClientData,
+        ]) {
+          if (data?.skillId !== undefined) skillIds.add(data.skillId);
+          for (const skillId of data?.skillIds ?? []) skillIds.add(skillId);
+        }
         for (const skillId of skillIds) {
           const states = statesBySkill.get(skillId) ?? [];
           states.push(level.state);

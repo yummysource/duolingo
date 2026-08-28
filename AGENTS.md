@@ -71,6 +71,7 @@ duolingo-cli goal streak [--json]
 # Language learning
 duolingo-cli language list [--username USER] [--abbreviations] [--json]
 duolingo-cli language words --language LANG [--username USER] [--json]
+duolingo-cli language recent-words --language LANG [--limit 1..100] [--username USER] [--json]
 duolingo-cli language skills --language LANG [--username USER] [--json]
 
 # Review
@@ -81,7 +82,8 @@ duolingo-cli review material --language LANG [--from LANG] [--topics 1..20] [--s
 
 Review sentences are current randomized practice samples, not exact historical
 lesson text. Requested sentence limits are maxima and deduplication may return
-fewer results. Every exposed CLI and Skill operation is read-only: it must not
+fewer results. Recent words preserve Duolingo's learned-date ranking but do not
+include exact learned timestamps. Every exposed CLI and Skill operation is read-only: it must not
 submit answers, change progress, spend currency, buy items, refill hearts, or
 modify goals.
 

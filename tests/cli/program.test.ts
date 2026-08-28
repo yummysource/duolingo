@@ -171,6 +171,19 @@ describe('runCli', () => {
       args: { language_abbr: 'es', response_format: 'json' },
     },
     {
+      argv: [
+        'language',
+        'recent-words',
+        '--language',
+        'ja',
+        '--limit',
+        '10',
+        '--json',
+      ],
+      tool: 'duolingo_get_recent_words',
+      args: { language_abbr: 'ja', limit: 10, response_format: 'json' },
+    },
+    {
       argv: ['language', 'skills', '--language', 'es'],
       tool: 'duolingo_get_learned_skills',
       args: { language_abbr: 'es', response_format: 'markdown' },
@@ -242,6 +255,17 @@ describe('runCli', () => {
     ).resolves.toBe(1);
     expect(deps.runTool).not.toHaveBeenCalled();
     expect(deps.errors.join('')).toContain('--days');
+  });
+
+  it('rejects a recent-word limit above 100 before invoking a tool', async () => {
+    await expect(
+      runCli(
+        ['language', 'recent-words', '--language', 'ja', '--limit', '101'],
+        deps,
+      ),
+    ).resolves.toBe(1);
+    expect(deps.runTool).not.toHaveBeenCalled();
+    expect(deps.errors.join('')).toContain('--limit');
   });
 
   it('rejects unsupported leaderboard units before invoking a tool', async () => {

@@ -36,6 +36,11 @@ the command result can be shown directly.
 
 For review requests, distinguish the two data sources:
 
+- `language recent-words` returns the latest learned lexemes in Duolingo's
+  newest-first learned-date ranking. Use it for requests such as “list my
+  latest 10 Japanese words.” Preserve the returned order. Explain that exact
+  learned timestamps are unavailable, so this is not an exact “last N days”
+  vocabulary filter.
 - `review recent` returns language-specific calendar XP and activities. The CLI
   maps skill IDs through either the legacy tree or the current learning path.
   Preserve records that have no skill ID; Duolingo does not provide exact

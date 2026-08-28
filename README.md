@@ -138,6 +138,7 @@ duolingo-cli shop items --json
 duolingo-cli goal streak --json
 duolingo-cli language list --abbreviations --json
 duolingo-cli language words --language es --json
+duolingo-cli language recent-words --language ja --limit 10 --json
 duolingo-cli review recent --language es --days 7 --json
 duolingo-cli review sentences --language es --limit 10 --json
 duolingo-cli review material --language es --topics 5 --limit 10 --json
@@ -149,7 +150,8 @@ legacy skill tree is empty, the CLI automatically falls back to the current
 learning path for topics and to Duolingo's learned-lexemes query for known
 words. Some activities still lack a skill ID. Exact historical lesson
 sentences are not available; review sentences are current practice samples and
-may vary.
+may vary. `language recent-words` follows Duolingo's newest-first learned-date
+ranking, but the API does not expose exact per-word timestamps.
 
 ---
 
@@ -268,6 +270,7 @@ All tools are **read-only** — the server never modifies your Duolingo account.
 | `duolingo_get_golden_topics`     | Fully mastered topics (strength = 1.0)                    |
 | `duolingo_get_reviewable_topics` | Learned but not fully mastered topics                     |
 | `duolingo_get_known_words`       | Set of known words for a language                         |
+| `duolingo_get_recent_words`      | Latest learned words in Duolingo's newest-first ranking   |
 | `duolingo_get_learned_skills`    | Full skill objects sorted by learning order               |
 | `duolingo_get_language_voices`   | Available TTS voice names for a language                  |
 | `duolingo_get_audio_url`         | Pronunciation audio URL for a word                        |

@@ -57,7 +57,7 @@ the maintained command grammar and defaults.
 - Account settings, streak, daily XP, and recent calendar activity.
 - Course enrolments, friends, and weekly or monthly leaderboards.
 - Hearts, currency balances, shop items, and streak goals.
-- Known vocabulary and learned skills.
+- Known vocabulary, latest learned words, and learned skills.
 - Recent XP activity mapped to skills and words.
 - Current practice-sentence sampling.
 - Review bundles based on weak topics, vocabulary, and practice samples.
@@ -70,6 +70,7 @@ the maintained command grammar and defaults.
 - “Show my streak, daily XP, and next streak goal.”
 - “List my courses and this week's friend leaderboard.”
 - “Export my known French words as JSON.”
+- “List the latest 10 Japanese words I learned.”
 - “Summarize my Spanish activity from the last 14 days.”
 - “Prepare up to 10 Spanish review sentences based on my weak topics.”
 - “Show my profile and then build this week's review bundle.”
@@ -101,6 +102,9 @@ token, place it in a repository, or pass it as a process argument.
 
 The Skill deliberately explains these distinctions:
 
+- Latest learned words preserve Duolingo's learned-date ranking. The API does
+  not expose exact per-word timestamps, so they cannot be filtered reliably as
+  “words learned in the last N days.”
 - Recent-learning data maps XP records to selected-language skills and words.
   It cannot reconstruct the exact prompts, answers, or sentences from past
   lessons.

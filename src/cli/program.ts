@@ -20,6 +20,7 @@ Usage:
   duolingo-cli goal streak [--json]
   duolingo-cli language list [--username USER] [--abbreviations] [--json]
   duolingo-cli language words --language LANG [--username USER] [--json]
+  duolingo-cli language recent-words --language LANG [--limit N] [--username USER] [--json]
   duolingo-cli language skills --language LANG [--username USER] [--json]
   duolingo-cli review recent --language LANG [--days N] [--json]
   duolingo-cli review sentences --language LANG [--from LANG] [--sessions N] [--limit N] [--json]
@@ -314,6 +315,21 @@ function buildLanguageInvocation(
           : 'duolingo_get_learned_skills',
       args,
     };
+  }
+
+  if (action === 'recent-words') {
+    const options = parseOptions(
+      tokens,
+      ['--language', '--limit', '--username'],
+      ['--json'],
+    );
+    const args: Record<string, unknown> = {
+      language_abbr: requireOption(options, '--language'),
+      response_format: responseFormat(options),
+    };
+    setOptional(args, 'limit', readInteger(options, '--limit', 1, 100));
+    setOptional(args, 'username', options.values.get('--username'));
+    return { toolName: 'duolingo_get_recent_words', args };
   }
 
   throw new CliUsageError(`Unknown command: language ${action ?? ''}`.trim());

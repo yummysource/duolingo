@@ -39,6 +39,8 @@ import type {
   DuolingoPathLevel,
   DuolingoPathSkill,
   DuolingoLearnedLexeme,
+  DuolingoLearnedLexemeOptions,
+  DuolingoLexemeSort,
   DuolingoFriendUser,
   DuolingoFollowingResponse,
   DuolingoFollowersResponse,
@@ -245,8 +247,13 @@ describe('Package exports: type shapes (compile-time)', () => {
       const _text: string = lexeme.text;
       const _translations: string[] = lexeme.translations;
     };
+    const _checkOptions = (options: DuolingoLearnedLexemeOptions) => {
+      const _sortBy: DuolingoLexemeSort | undefined = options.sortBy;
+      const _limit: number | undefined = options.limit;
+    };
     expect(typeof _checkCourse).toBe('function');
     expect(typeof _checkLexeme).toBe('function');
+    expect(typeof _checkOptions).toBe('function');
   });
 
   it('DuolingoFriendUser has social fields', () => {

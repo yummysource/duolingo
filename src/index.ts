@@ -44,6 +44,8 @@ export type {
   DuolingoPathSection,
   DuolingoPathSkill,
   DuolingoLearnedLexeme,
+  DuolingoLearnedLexemeOptions,
+  DuolingoLexemeSort,
   DuolingoLearnedLexemesResponse,
 
   // Friends / social

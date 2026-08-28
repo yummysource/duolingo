@@ -3,7 +3,7 @@
  *
  * Tools: get_language_details, get_language_progress, get_known_topics,
  *        get_unknown_topics, get_golden_topics, get_reviewable_topics,
- *        get_known_words, get_learned_skills,
+ *        get_known_words, get_recent_words, get_learned_skills,
  *        get_language_voices, get_audio_url
  */
 
@@ -16,7 +16,11 @@ import {
   UsernameFieldSchema,
   computeDependencyOrder,
 } from './helpers.js';
-import { resolveKnownWords, resolveLanguageSkills } from './language-source.js';
+import {
+  courseMatchesLanguage,
+  resolveKnownWords,
+  resolveLanguageSkills,
+} from './language-source.js';
 
 const LanguageAbbrSchema = z
   .string()
@@ -96,6 +100,118 @@ export function registerLanguageTools(server: McpServer): void {
         lines.push(`- **Points**: ${details.points}`);
         lines.push(`- **Streak**: ${details.streak} days`);
         lines.push(`- **Currently Learning**: ${details.current_learning}`);
+        return { content: [{ type: 'text', text: lines.join('\n') }] };
+      } catch (err) {
+        return { content: [{ type: 'text', text: handleError(err) }] };
+      }
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // Get Recent Words
+  // -------------------------------------------------------------------------
+  /** Register newest learned vocabulary, ordered by Duolingo's own ranking. */
+  server.registerTool(
+    'duolingo_get_recent_words',
+    {
+      title: 'Get Duolingo Recent Words',
+      description:
+        "Get a user's latest learned words for a language, newest first according to Duolingo's learned-date ranking. " +
+        'Exact learned timestamps are not exposed by the API.',
+      inputSchema: {
+        language_abbr: LanguageAbbrSchema,
+        username: UsernameFieldSchema,
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(100)
+          .default(10)
+          .describe('Maximum number of recent words to return (1-100).'),
+        response_format: ResponseFormatSchema,
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
+    async ({ language_abbr, username, limit, response_format }) => {
+      try {
+        const client = getClient();
+        const userData = await client.getUserData(username);
+        if (!userData.language_data[language_abbr]) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Language '${language_abbr}' not found. Make sure the user is learning this language.`,
+              },
+            ],
+          };
+        }
+
+        const currentCourse = await client.getCurrentCourse(userData.id);
+        if (!courseMatchesLanguage(currentCourse, language_abbr)) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text:
+                  `Language '${language_abbr}' is not the active Duolingo course. ` +
+                  'Switch to that course in Duolingo and try again.',
+              },
+            ],
+          };
+        }
+
+        const lexemes = await client.getLearnedLexemes(
+          language_abbr,
+          currentCourse.fromLanguage,
+          userData.id,
+          { sortBy: 'LEARNED_DATE', limit },
+        );
+        const words = lexemes.map((lexeme, index) => ({
+          rank: index + 1,
+          text: lexeme.text,
+          translations: lexeme.translations,
+          audio_url: lexeme.audioURL ?? null,
+          is_new: lexeme.isNew ?? null,
+        }));
+        const note =
+          'Ordered newest first by Duolingo learned-date ranking; exact learned timestamps are not exposed.';
+        const result = {
+          language: language_abbr,
+          order: 'learned_date',
+          count: words.length,
+          words,
+          note,
+        };
+
+        if (response_format === 'json') {
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+          };
+        }
+
+        const lines = [
+          `# Recent Words (${language_abbr.toUpperCase()}) — ${words.length} words`,
+          '',
+        ];
+        if (words.length === 0) {
+          lines.push('No learned words found.');
+        } else {
+          for (const word of words) {
+            const translation =
+              word.translations.join(', ') || 'No translation';
+            lines.push(`${word.rank}. **${word.text}** — ${translation}`);
+          }
+        }
+        lines.push(
+          '',
+          '> Exact learned timestamps are not exposed by Duolingo.',
+        );
         return { content: [{ type: 'text', text: lines.join('\n') }] };
       } catch (err) {
         return { content: [{ type: 'text', text: handleError(err) }] };

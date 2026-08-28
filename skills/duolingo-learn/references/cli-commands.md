@@ -62,10 +62,15 @@ hearts, or modify a goal.
 ```bash
 duolingo-cli language list [--username USER] [--abbreviations] [--json]
 duolingo-cli language words --language LANG [--username USER] [--json]
+duolingo-cli language recent-words --language LANG [--limit 1..100] [--username USER] [--json]
 duolingo-cli language skills --language LANG [--username USER] [--json]
 ```
 
 `LANG` is a course abbreviation such as `es`, `fr`, or `de`.
+`language recent-words` defaults to 10 results and preserves Duolingo's
+newest-first learned-date ranking. It requires the requested language to be the
+active course. Exact per-word timestamps are unavailable, so do not describe
+the result as words learned within an exact date range.
 
 ## Review
 
@@ -96,6 +101,12 @@ Example for recent Spanish activity and ten current review sentences:
 ```bash
 duolingo-cli review recent --language es --days 7 --json
 duolingo-cli review material --language es --limit 10 --json
+```
+
+Example for the latest ten Japanese words:
+
+```bash
+duolingo-cli language recent-words --language ja --limit 10 --json
 ```
 
 Recent activity cannot reconstruct exact historical challenge text. Practice

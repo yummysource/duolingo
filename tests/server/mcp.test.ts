@@ -270,6 +270,7 @@ describe('MCP Server: tool discovery', () => {
       'duolingo_get_learned_skills',
       'duolingo_get_practice_sentences',
       'duolingo_get_recent_learning',
+      'duolingo_get_recent_words',
       'duolingo_get_review_material',
       'duolingo_get_reviewable_topics',
       'duolingo_get_settings',
@@ -363,6 +364,21 @@ describe('MCP Server: tool execution via wire protocol', () => {
         },
       }),
       getLanguageVoices: vi.fn().mockResolvedValue(['beaes', 'juniores']),
+      getCurrentCourse: vi.fn().mockResolvedValue({
+        id: 'course-es-en',
+        subject: 'language',
+        topic: 'es',
+        learningLanguage: 'es',
+        fromLanguage: 'en',
+        title: 'Spanish',
+        skills: [],
+        pathSectioned: [],
+      }),
+      getLearnedLexemes: vi
+        .fn()
+        .mockResolvedValue([
+          { text: 'hola', translations: ['hello'], isNew: false },
+        ]),
       buildAudioUrl: vi
         .fn()
         .mockResolvedValue(
@@ -484,6 +500,20 @@ describe('MCP Server: tool execution via wire protocol', () => {
       language_abbr: 'es',
     });
     expect(result).toContain('Basics 1');
+  });
+
+  it('duolingo_get_recent_words returns newest vocabulary', async () => {
+    const result = await callTool(client, 'duolingo_get_recent_words', {
+      language_abbr: 'es',
+      limit: 1,
+      response_format: 'json',
+    });
+    const parsed = JSON.parse(result) as {
+      count: number;
+      words: { text: string }[];
+    };
+    expect(parsed.count).toBe(1);
+    expect(parsed.words[0]?.text).toBe('hola');
   });
 
   it('duolingo_get_language_details returns level and points', async () => {

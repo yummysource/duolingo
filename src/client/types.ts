@@ -160,6 +160,7 @@ export interface DuolingoPathLevel {
   finishedSessions: number;
   totalSessions: number;
   pathLevelClientData: DuolingoPathLevelClientData;
+  pathLevelMetadata?: DuolingoPathLevelClientData;
   [key: string]: unknown;
 }
 
@@ -209,11 +210,18 @@ export interface DuolingoLearnedLexeme {
   [key: string]: unknown;
 }
 
+export type DuolingoLexemeSort = 'ALPHABETICAL' | 'LEARNED_DATE';
+
+export interface DuolingoLearnedLexemeOptions {
+  sortBy?: DuolingoLexemeSort;
+  limit?: number;
+}
+
 export interface DuolingoLearnedLexemesResponse {
   learnedLexemes: DuolingoLearnedLexeme[];
   pagination: {
     totalLexemes: number;
-    nextStartIndex: number;
+    nextStartIndex: number | null;
     [key: string]: unknown;
   };
 }

@@ -73,7 +73,13 @@ leaderboard, shop catalogue, hearts, currencies, and streak goals.
 ### Language
 
 Language details and progress, learned and unknown topics, mastered and
-reviewable topics, known words, learned skills, TTS voices, and audio URLs.
+reviewable topics, known words, recent words, learned skills, TTS voices, and
+audio URLs.
+
+`duolingo_get_recent_words` accepts `language_abbr`, optional `username`, a
+`limit` from 1 to 100 (default 10), and `response_format`. It preserves
+Duolingo's newest-first learned-date ranking. The selected language must be the
+active course, and exact per-word learning timestamps are not exposed.
 
 ### Review
 
@@ -115,6 +121,8 @@ inspector's environment options without printing them in shared logs.
 
 - Duolingo exposes no supported endpoint for reconstructing exact completed
   lesson sentences from XP history.
+- Learned words can be ranked by learned date, but exact per-word timestamps
+  and exact date-range filtering are unavailable.
 - Global-practice sessions are current, randomized, and occasionally empty.
 - The project uses unofficial endpoints that can change without notice.
 - The server does not answer challenges, finish sessions, purchase items,

@@ -136,8 +136,12 @@ duolingo-cli goal streak [--json]
 ```bash
 duolingo-cli language list [--username USER] [--abbreviations] [--json]
 duolingo-cli language words --language LANG [--username USER] [--json]
+duolingo-cli language recent-words --language LANG [--limit 1..100] [--username USER] [--json]
 duolingo-cli language skills --language LANG [--username USER] [--json]
 ```
+
+`language recent-words` 預設列出 Duolingo 依學習日期排序的最新 10 個單字。
+API 不提供每個單字的精確學習時間，因此這不是「最近 N 天新增單字」查詢。
 
 ### Review
 
@@ -217,7 +221,8 @@ MCP Tool 分為：
 
 - Account：Profile、設定、Streak、每日 XP、課程、好友、日曆、排行榜、商店、
   Hearts、貨幣與 Streak Goal。
-- Language：語言進度、主題、已知單字、已學 Skill、TTS Voice 與 Audio URL。
+- Language：語言進度、主題、已知單字、最新學習單字、已學 Skill、TTS Voice
+  與 Audio URL。
 - Review：`duolingo_get_recent_learning`、
   `duolingo_get_practice_sentences`、`duolingo_get_review_material`。
 - Utilities：語言名稱與縮寫轉換。

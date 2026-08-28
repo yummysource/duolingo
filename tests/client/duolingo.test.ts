@@ -239,7 +239,40 @@ describe('DuolingoClient', () => {
           strength: null,
         },
       ],
-      pathSectioned: [],
+      pathSectioned: [
+        {
+          index: 0,
+          completedUnits: 1,
+          totalUnits: 2,
+          units: [
+            {
+              unitIndex: 0,
+              levels: [
+                {
+                  type: 'skill',
+                  state: 'legendary',
+                  finishedSessions: 4,
+                  totalSessions: 4,
+                  pathLevelClientData: {},
+                  pathLevelMetadata: { skillId: 'skill-1' },
+                },
+              ],
+            },
+            {
+              unitIndex: 1,
+              levels: [
+                {
+                  type: 'skill',
+                  state: 'unit_test',
+                  finishedSessions: 2,
+                  totalSessions: 4,
+                  pathLevelClientData: { skillId: 'skill-active' },
+                },
+              ],
+            },
+          ],
+        },
+      ],
     };
 
     it('fetches current learning-path course data', async () => {
@@ -305,6 +338,59 @@ describe('DuolingoClient', () => {
         client as unknown as { http: { post: ReturnType<typeof vi.fn> } }
       ).http.post;
       expect(mockPost).toHaveBeenCalledTimes(2);
+    });
+
+    it('sorts recent lexemes by learned date and includes active path skills', async () => {
+      const client = makeClientWithMockHttp(
+        new Map([
+          ['/users/testuser', { status: 200, data: MOCK_USER_DATA }],
+          ['fields=currentCourse', { status: 200, data: { currentCourse } }],
+          [
+            'sortBy=LEARNED_DATE',
+            {
+              status: 200,
+              data: {
+                learnedLexemes: [
+                  { text: 'パイナップル', translations: ['pineapple'] },
+                  { text: 'ストロー', translations: ['straw'] },
+                ],
+                pagination: { totalLexemes: 961, nextStartIndex: null },
+              },
+            },
+          ],
+        ]),
+      );
+
+      const words = await client.getLearnedLexemes('ja', 'zh-CN', undefined, {
+        sortBy: 'LEARNED_DATE',
+        limit: 2,
+      });
+
+      expect(words.map((word) => word.text)).toEqual([
+        'パイナップル',
+        'ストロー',
+      ]);
+      const mockPost = (
+        client as unknown as { http: { post: ReturnType<typeof vi.fn> } }
+      ).http.post;
+      expect(mockPost).toHaveBeenCalledWith(
+        expect.stringContaining('limit=2&sortBy=LEARNED_DATE&startIndex=0'),
+        {
+          lastTimeLearnedAt: null,
+          progressedSkills: [
+            {
+              finishedLevels: 1,
+              finishedSessions: 4,
+              skillId: { id: 'skill-1' },
+            },
+            {
+              finishedLevels: 0,
+              finishedSessions: 2,
+              skillId: { id: 'skill-active' },
+            },
+          ],
+        },
+      );
     });
   });
 
