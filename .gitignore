@@ -14,3 +14,7 @@ dist/
 
 # Coverage
 coverage/
+
+# Local private documents and macOS metadata
+/private/
+.DS_Store
