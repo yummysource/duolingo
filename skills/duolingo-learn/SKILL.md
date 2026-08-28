@@ -49,7 +49,10 @@ For review requests, distinguish the two data sources:
   newest-first learned-date ranking. Use it for requests such as “list my
   latest 10 Japanese words.” Preserve the returned order. Explain that exact
   learned timestamps are unavailable, so this is not an exact “last N days”
-  vocabulary filter.
+  vocabulary filter. For Japanese (`--language ja`), always include standard
+  Hepburn romaji for every word in the user-facing result, even when the user
+  does not explicitly request it. Also show the kana reading for words written
+  with kanji, and use macrons for long vowels (for example, `カード` → `kādo`).
 - `review recent` returns language-specific calendar XP and activities. The CLI
   maps skill IDs through either the legacy tree or the current learning path.
   Preserve records that have no skill ID; Duolingo does not provide exact
