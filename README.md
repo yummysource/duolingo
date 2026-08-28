@@ -128,6 +128,14 @@ Common read-only queries:
 
 ```bash
 duolingo-cli account profile --json
+duolingo-cli account streak --json
+duolingo-cli account daily-xp --json
+duolingo-cli course list --json
+duolingo-cli social leaderboard --unit week --json
+duolingo-cli resource hearts --json
+duolingo-cli resource currencies --json
+duolingo-cli shop items --json
+duolingo-cli goal streak --json
 duolingo-cli language list --abbreviations --json
 duolingo-cli language words --language es --json
 duolingo-cli review recent --language es --days 7 --json

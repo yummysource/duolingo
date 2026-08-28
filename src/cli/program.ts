@@ -8,6 +8,16 @@ const HELP = `duolingo-cli - read-only Duolingo learning data
 Usage:
   duolingo-cli auth init|show|logout
   duolingo-cli account profile [--username USER] [--json]
+  duolingo-cli account settings [--json]
+  duolingo-cli account streak [--username USER] [--json]
+  duolingo-cli account daily-xp [--json]
+  duolingo-cli account calendar [--username USER] [--json]
+  duolingo-cli course list [--username USER] [--json]
+  duolingo-cli social friends [--json]
+  duolingo-cli social leaderboard [--unit week|month] [--json]
+  duolingo-cli resource hearts|currencies [--json]
+  duolingo-cli shop items [--json]
+  duolingo-cli goal streak [--json]
   duolingo-cli language list [--username USER] [--abbreviations] [--json]
   duolingo-cli language words --language LANG [--username USER] [--json]
   duolingo-cli language skills --language LANG [--username USER] [--json]
@@ -144,19 +154,128 @@ function responseFormat(options: ParsedOptions): 'json' | 'markdown' {
   return options.flags.has('--json') ? 'json' : 'markdown';
 }
 
+function readChoice<T extends string>(
+  options: ParsedOptions,
+  name: string,
+  choices: readonly T[],
+): T | undefined {
+  const value = options.values.get(name);
+  if (value === undefined) return undefined;
+  if (!choices.includes(value as T)) {
+    throw new CliUsageError(
+      `Option ${name} must be one of: ${choices.join(', ')}.`,
+    );
+  }
+  return value as T;
+}
+
+function buildSimpleInvocation(
+  tokens: string[],
+  toolName: string,
+): ToolInvocation {
+  const options = parseOptions(tokens, [], ['--json']);
+  return {
+    toolName,
+    args: { response_format: responseFormat(options) },
+  };
+}
+
 function buildAccountInvocation(
   action: string | undefined,
   tokens: string[],
 ): ToolInvocation {
-  if (action !== 'profile') {
-    throw new CliUsageError(`Unknown command: account ${action ?? ''}`.trim());
+  if (action === 'settings') {
+    return buildSimpleInvocation(tokens, 'duolingo_get_settings');
+  }
+  if (action === 'daily-xp') {
+    return buildSimpleInvocation(tokens, 'duolingo_get_daily_xp_progress');
+  }
+  if (action === 'profile' || action === 'streak' || action === 'calendar') {
+    const options = parseOptions(tokens, ['--username'], ['--json']);
+    const args: Record<string, unknown> = {
+      response_format: responseFormat(options),
+    };
+    setOptional(args, 'username', options.values.get('--username'));
+    const toolName =
+      action === 'profile'
+        ? 'duolingo_get_user_info'
+        : action === 'streak'
+          ? 'duolingo_get_streak_info'
+          : 'duolingo_get_calendar';
+    return { toolName, args };
+  }
+
+  throw new CliUsageError(`Unknown command: account ${action ?? ''}`.trim());
+}
+
+function buildCourseInvocation(
+  action: string | undefined,
+  tokens: string[],
+): ToolInvocation {
+  if (action !== 'list') {
+    throw new CliUsageError(`Unknown command: course ${action ?? ''}`.trim());
   }
   const options = parseOptions(tokens, ['--username'], ['--json']);
   const args: Record<string, unknown> = {
     response_format: responseFormat(options),
   };
   setOptional(args, 'username', options.values.get('--username'));
-  return { toolName: 'duolingo_get_user_info', args };
+  return { toolName: 'duolingo_get_courses', args };
+}
+
+function buildSocialInvocation(
+  action: string | undefined,
+  tokens: string[],
+): ToolInvocation {
+  if (action === 'friends') {
+    return buildSimpleInvocation(tokens, 'duolingo_get_friends');
+  }
+  if (action === 'leaderboard') {
+    const options = parseOptions(tokens, ['--unit'], ['--json']);
+    const args: Record<string, unknown> = {
+      response_format: responseFormat(options),
+    };
+    setOptional(
+      args,
+      'unit',
+      readChoice(options, '--unit', ['week', 'month'] as const),
+    );
+    return { toolName: 'duolingo_get_leaderboard', args };
+  }
+  throw new CliUsageError(`Unknown command: social ${action ?? ''}`.trim());
+}
+
+function buildResourceInvocation(
+  action: string | undefined,
+  tokens: string[],
+): ToolInvocation {
+  if (action === 'hearts') {
+    return buildSimpleInvocation(tokens, 'duolingo_get_health');
+  }
+  if (action === 'currencies') {
+    return buildSimpleInvocation(tokens, 'duolingo_get_currencies');
+  }
+  throw new CliUsageError(`Unknown command: resource ${action ?? ''}`.trim());
+}
+
+function buildShopInvocation(
+  action: string | undefined,
+  tokens: string[],
+): ToolInvocation {
+  if (action === 'items') {
+    return buildSimpleInvocation(tokens, 'duolingo_get_shop_items');
+  }
+  throw new CliUsageError(`Unknown command: shop ${action ?? ''}`.trim());
+}
+
+function buildGoalInvocation(
+  action: string | undefined,
+  tokens: string[],
+): ToolInvocation {
+  if (action === 'streak') {
+    return buildSimpleInvocation(tokens, 'duolingo_get_streak_goal');
+  }
+  throw new CliUsageError(`Unknown command: goal ${action ?? ''}`.trim());
 }
 
 function buildLanguageInvocation(
@@ -261,6 +380,11 @@ function buildReviewInvocation(
 function buildToolInvocation(argv: string[]): ToolInvocation {
   const [group, action, ...tokens] = argv;
   if (group === 'account') return buildAccountInvocation(action, tokens);
+  if (group === 'course') return buildCourseInvocation(action, tokens);
+  if (group === 'social') return buildSocialInvocation(action, tokens);
+  if (group === 'resource') return buildResourceInvocation(action, tokens);
+  if (group === 'shop') return buildShopInvocation(action, tokens);
+  if (group === 'goal') return buildGoalInvocation(action, tokens);
   if (group === 'language') return buildLanguageInvocation(action, tokens);
   if (group === 'review') return buildReviewInvocation(action, tokens);
   throw new CliUsageError(`Unknown command: ${argv.join(' ')}`);

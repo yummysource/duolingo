@@ -111,10 +111,29 @@ duolingo-cli auth show --status
 前置檢查。`auth logout` 會刪除本機保存的憑證，但不會修改目前 Shell 的環境
 變數。
 
-### 帳號與語言
+### 帳號、課程與社交
 
 ```bash
 duolingo-cli account profile [--username USER] [--json]
+duolingo-cli account settings [--json]
+duolingo-cli account streak [--username USER] [--json]
+duolingo-cli account daily-xp [--json]
+duolingo-cli account calendar [--username USER] [--json]
+duolingo-cli course list [--username USER] [--json]
+duolingo-cli social friends [--json]
+duolingo-cli social leaderboard [--unit week|month] [--json]
+duolingo-cli resource hearts [--json]
+duolingo-cli resource currencies [--json]
+duolingo-cli shop items [--json]
+duolingo-cli goal streak [--json]
+```
+
+以上指令都是唯讀查詢，不會補充愛心、花費寶石、購買商品或修改連續學習
+目標。好友和排行榜為空時是合法結果。
+
+### 語言
+
+```bash
 duolingo-cli language list [--username USER] [--abbreviations] [--json]
 duolingo-cli language words --language LANG [--username USER] [--json]
 duolingo-cli language skills --language LANG [--username USER] [--json]
@@ -128,9 +147,8 @@ duolingo-cli review sentences --language LANG [--from LANG] [--sessions 1..10] [
 duolingo-cli review material --language LANG [--from LANG] [--topics 1..20] [--sessions 1..10] [--limit 1..100] [--json]
 ```
 
-- `recent` 預設查詢 7 天，從指定語言的 Calendar 取得 XP 與活動；若新版學習
-  路徑沒有舊版 Skill 資料，總 XP 與 `activities` 仍會保留，但 `skills` 與
-  `words` 可能為空。
+- `recent` 預設查詢 7 天，從指定語言的 Calendar 取得 XP 與活動；新版課程
+  會使用目前學習路徑對應 Skill，沒有 Skill ID 的活動仍會保留。
 - `sentences` 預設抽樣 1 個 Session，最多回傳 20 句目前練習內容。
 - `material` 預設挑選 5 個弱項主題、抽樣 3 個 Session，最多回傳 20 句。
 - `--limit` 是上限而非保證數量；空 Session 與去重可能讓實際結果較少。

@@ -23,9 +23,39 @@ credentials and cannot unset credentials already supplied by the environment.
 
 ```bash
 duolingo-cli account profile [--username USER] [--json]
+duolingo-cli account settings [--json]
+duolingo-cli account streak [--username USER] [--json]
+duolingo-cli account daily-xp [--json]
+duolingo-cli account calendar [--username USER] [--json]
 ```
 
-Without `--username`, profile uses the authorized account.
+Without `--username`, profile, streak, and calendar use the authorized account.
+Settings and daily XP are available only for the authorized account.
+
+## Courses and Social
+
+```bash
+duolingo-cli course list [--username USER] [--json]
+duolingo-cli social friends [--json]
+duolingo-cli social leaderboard [--unit week|month] [--json]
+```
+
+Course lists can include language, Math, Chess, and Music courses. Friends and
+leaderboards are scoped to the authorized account. An empty social result is a
+valid result, not an authorization failure.
+
+## Resources, Shop, and Goals
+
+```bash
+duolingo-cli resource hearts [--json]
+duolingo-cli resource currencies [--json]
+duolingo-cli shop items [--json]
+duolingo-cli goal streak [--json]
+```
+
+These commands inspect current hearts, gem/lingot balances, the shop catalogue,
+and streak-goal checkpoints. They never spend currency, buy items, refill
+hearts, or modify a goal.
 
 ## Languages
 

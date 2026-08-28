@@ -431,7 +431,14 @@ export function registerAccountTools(server: McpServer): void {
         const following = await client.getFollowing(userData.id);
 
         if (following.length === 0) {
-          return { content: [{ type: 'text', text: 'No friends found.' }] };
+          return {
+            content: [
+              {
+                type: 'text',
+                text: response_format === 'json' ? '[]' : 'No friends found.',
+              },
+            ],
+          };
         }
 
         const friends = following.map((f) => ({
@@ -495,7 +502,15 @@ export function registerAccountTools(server: McpServer): void {
 
         if (sorted.length === 0) {
           return {
-            content: [{ type: 'text', text: 'No calendar entries found.' }],
+            content: [
+              {
+                type: 'text',
+                text:
+                  response_format === 'json'
+                    ? '[]'
+                    : 'No calendar entries found.',
+              },
+            ],
           };
         }
 
@@ -560,7 +575,10 @@ export function registerAccountTools(server: McpServer): void {
             content: [
               {
                 type: 'text',
-                text: `No leaderboard data found for unit '${unit}'.`,
+                text:
+                  response_format === 'json'
+                    ? '[]'
+                    : `No leaderboard data found for unit '${unit}'.`,
               },
             ],
           };
@@ -640,7 +658,12 @@ export function registerAccountTools(server: McpServer): void {
 
         if (courses.length === 0) {
           return {
-            content: [{ type: 'text', text: 'No courses found.' }],
+            content: [
+              {
+                type: 'text',
+                text: response_format === 'json' ? '[]' : 'No courses found.',
+              },
+            ],
           };
         }
 
@@ -703,7 +726,15 @@ export function registerAccountTools(server: McpServer): void {
         const items = await getClient().getShopItems();
 
         if (items.length === 0) {
-          return { content: [{ type: 'text', text: 'No shop items found.' }] };
+          return {
+            content: [
+              {
+                type: 'text',
+                text:
+                  response_format === 'json' ? '[]' : 'No shop items found.',
+              },
+            ],
+          };
         }
 
         if (response_format === 'json') {

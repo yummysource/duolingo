@@ -54,6 +54,9 @@ the maintained command grammar and defaults.
 ## What the Skill handles
 
 - Account profile and learning-language inspection.
+- Account settings, streak, daily XP, and recent calendar activity.
+- Course enrolments, friends, and weekly or monthly leaderboards.
+- Hearts, currency balances, shop items, and streak goals.
 - Known vocabulary and learned skills.
 - Recent XP activity mapped to skills and words.
 - Current practice-sentence sampling.
@@ -63,6 +66,9 @@ the maintained command grammar and defaults.
 ## Example requests
 
 - “Show the languages on my Duolingo account.”
+- “How many hearts and gems do I have?”
+- “Show my streak, daily XP, and next streak goal.”
+- “List my courses and this week's friend leaderboard.”
 - “Export my known French words as JSON.”
 - “Summarize my Spanish activity from the last 14 days.”
 - “Prepare up to 10 Spanish review sentences based on my weak topics.”

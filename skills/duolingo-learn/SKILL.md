@@ -1,6 +1,6 @@
 ---
 name: duolingo-learn
-description: Use when users want to inspect their Duolingo account, languages, vocabulary, recent learning activity, practice sentences, or review material through duolingo-cli.
+description: Use when users want to inspect Duolingo accounts, courses, streaks, activity, social data, resources, vocabulary, practice sentences, or review material through duolingo-cli.
 ---
 
 # Duolingo Learn

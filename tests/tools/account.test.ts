@@ -466,6 +466,14 @@ describe('Account Tools', () => {
       const result = await callTool(server, 'duolingo_get_friends', {});
       expect(result).toBe('No friends found.');
     });
+
+    it('returns an empty JSON array when following list is empty', async () => {
+      vi.mocked(mockClient.getFollowing!).mockResolvedValue([]);
+      const result = await callTool(server, 'duolingo_get_friends', {
+        response_format: 'json',
+      });
+      expect(JSON.parse(result)).toEqual([]);
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -498,6 +506,17 @@ describe('Account Tools', () => {
       });
       const result = await callTool(server, 'duolingo_get_calendar', {});
       expect(result).toBe('No calendar entries found.');
+    });
+
+    it('returns an empty JSON array when calendar is empty', async () => {
+      vi.mocked(mockClient.getUserData!).mockResolvedValue({
+        ...MOCK_USER_DATA,
+        calendar: [],
+      });
+      const result = await callTool(server, 'duolingo_get_calendar', {
+        response_format: 'json',
+      });
+      expect(JSON.parse(result)).toEqual([]);
     });
 
     it('returns entries sorted newest first', async () => {
@@ -556,6 +575,15 @@ describe('Account Tools', () => {
       });
       expect(result).toContain("No leaderboard data found for unit 'week'");
     });
+
+    it('returns an empty JSON array when leaderboard data is empty', async () => {
+      vi.mocked(mockClient.getFollowing!).mockResolvedValue([]);
+      const result = await callTool(server, 'duolingo_get_leaderboard', {
+        unit: 'week',
+        response_format: 'json',
+      });
+      expect(JSON.parse(result)).toEqual([]);
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -599,6 +627,17 @@ describe('Account Tools', () => {
       expect(result).toBe('No courses found.');
     });
 
+    it('returns an empty JSON array when no courses are found', async () => {
+      vi.mocked(mockClient.getUserDataV2!).mockResolvedValue({
+        ...MOCK_USER_DATA_V2,
+        courses: [],
+      });
+      const result = await callTool(server, 'duolingo_get_courses', {
+        response_format: 'json',
+      });
+      expect(JSON.parse(result)).toEqual([]);
+    });
+
     it('looks up user ID when username is provided', async () => {
       await callTool(server, 'duolingo_get_courses', { username: 'otheruser' });
       expect(mockClient.getUserIdByUsername).toHaveBeenCalledWith('otheruser');
@@ -629,6 +668,14 @@ describe('Account Tools', () => {
       vi.mocked(mockClient.getShopItems!).mockResolvedValue([]);
       const result = await callTool(server, 'duolingo_get_shop_items', {});
       expect(result).toBe('No shop items found.');
+    });
+
+    it('returns an empty JSON array when no items are found', async () => {
+      vi.mocked(mockClient.getShopItems!).mockResolvedValue([]);
+      const result = await callTool(server, 'duolingo_get_shop_items', {
+        response_format: 'json',
+      });
+      expect(JSON.parse(result)).toEqual([]);
     });
   });
 

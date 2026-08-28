@@ -48,6 +48,9 @@ describe('runCli', () => {
     await expect(runCli(['--help'], deps)).resolves.toBe(0);
     expect(deps.output.join('')).toContain('duolingo-cli auth');
     expect(deps.output.join('')).toContain('duolingo-cli review');
+    expect(deps.output.join('')).toContain('duolingo-cli social leaderboard');
+    expect(deps.output.join('')).toContain('duolingo-cli resource hearts');
+    expect(deps.output.join('')).toContain('duolingo-cli goal streak');
     expect(deps.errors).toEqual([]);
   });
 
@@ -101,6 +104,61 @@ describe('runCli', () => {
       argv: ['account', 'profile', '--username', 'friend', '--json'],
       tool: 'duolingo_get_user_info',
       args: { username: 'friend', response_format: 'json' },
+    },
+    {
+      argv: ['account', 'settings', '--json'],
+      tool: 'duolingo_get_settings',
+      args: { response_format: 'json' },
+    },
+    {
+      argv: ['account', 'streak', '--username', 'friend', '--json'],
+      tool: 'duolingo_get_streak_info',
+      args: { username: 'friend', response_format: 'json' },
+    },
+    {
+      argv: ['account', 'daily-xp', '--json'],
+      tool: 'duolingo_get_daily_xp_progress',
+      args: { response_format: 'json' },
+    },
+    {
+      argv: ['account', 'calendar', '--username', 'friend'],
+      tool: 'duolingo_get_calendar',
+      args: { username: 'friend', response_format: 'markdown' },
+    },
+    {
+      argv: ['course', 'list', '--username', 'friend', '--json'],
+      tool: 'duolingo_get_courses',
+      args: { username: 'friend', response_format: 'json' },
+    },
+    {
+      argv: ['social', 'friends', '--json'],
+      tool: 'duolingo_get_friends',
+      args: { response_format: 'json' },
+    },
+    {
+      argv: ['social', 'leaderboard', '--unit', 'month', '--json'],
+      tool: 'duolingo_get_leaderboard',
+      args: { unit: 'month', response_format: 'json' },
+    },
+    {
+      argv: ['resource', 'hearts', '--json'],
+      tool: 'duolingo_get_health',
+      args: { response_format: 'json' },
+    },
+    {
+      argv: ['resource', 'currencies'],
+      tool: 'duolingo_get_currencies',
+      args: { response_format: 'markdown' },
+    },
+    {
+      argv: ['shop', 'items', '--json'],
+      tool: 'duolingo_get_shop_items',
+      args: { response_format: 'json' },
+    },
+    {
+      argv: ['goal', 'streak', '--json'],
+      tool: 'duolingo_get_streak_goal',
+      args: { response_format: 'json' },
     },
     {
       argv: ['language', 'list', '--abbreviations', '--json'],
@@ -184,6 +242,14 @@ describe('runCli', () => {
     ).resolves.toBe(1);
     expect(deps.runTool).not.toHaveBeenCalled();
     expect(deps.errors.join('')).toContain('--days');
+  });
+
+  it('rejects unsupported leaderboard units before invoking a tool', async () => {
+    await expect(
+      runCli(['social', 'leaderboard', '--unit', 'year'], deps),
+    ).resolves.toBe(1);
+    expect(deps.runTool).not.toHaveBeenCalled();
+    expect(deps.errors.join('')).toContain('--unit');
   });
 
   it('guides unauthenticated users to the interactive auth flow', async () => {

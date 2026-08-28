@@ -59,9 +59,37 @@ which makes it suitable for preflight checks.
 
 ```bash
 duolingo-cli account profile [--username USER] [--json]
+duolingo-cli account settings [--json]
+duolingo-cli account streak [--username USER] [--json]
+duolingo-cli account daily-xp [--json]
+duolingo-cli account calendar [--username USER] [--json]
 ```
 
-Without `--username`, the command returns the authorized account.
+Without `--username`, profile, streak, and calendar return the authorized
+account. Settings and daily XP are authenticated-account queries.
+
+### Courses and social data
+
+```bash
+duolingo-cli course list [--username USER] [--json]
+duolingo-cli social friends [--json]
+duolingo-cli social leaderboard [--unit week|month] [--json]
+```
+
+The leaderboard defaults to `week`. Friends and leaderboards use the authorized
+account; an empty array is a valid result.
+
+### Resources, shop, and goals
+
+```bash
+duolingo-cli resource hearts [--json]
+duolingo-cli resource currencies [--json]
+duolingo-cli shop items [--json]
+duolingo-cli goal streak [--json]
+```
+
+All are read-only: they do not refill hearts, spend currency, purchase items,
+or change streak goals.
 
 ### Languages
 

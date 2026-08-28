@@ -1,6 +1,6 @@
 {
   "name": "@yummysource/duolingo-cli",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Read-only Duolingo CLI, reusable Skill, API client, and MCP server",
   "author": {
     "name": "Daniel Schroeder",
