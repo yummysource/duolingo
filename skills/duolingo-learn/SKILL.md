@@ -15,7 +15,7 @@ structured commands without requiring separate protocol configuration.
 2. Run `duolingo-cli auth show --status`.
 3. If it prints `unauthorized`, stop and ask the user to run
    `duolingo-cli auth init` in their own interactive terminal. Resume only after
-authorization succeeds.
+   authorization succeeds.
 
 If the installed CLI does not expose a referenced command in
 `duolingo-cli --help`, ask the user to upgrade the package instead of guessing
