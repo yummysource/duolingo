@@ -9,6 +9,7 @@ describe('npm publish workflow', () => {
 
     expect(workflow).toContain('release:');
     expect(workflow).toContain('- published');
+    expect(workflow).toContain('workflow_dispatch:');
     expect(workflow).toContain('id-token: write');
     expect(workflow).toContain('NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}');
     expect(workflow).toContain('npm publish --provenance --access public');
