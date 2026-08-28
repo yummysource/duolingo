@@ -1,0 +1,50 @@
+name: Live Canary
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      language:
+        description: Language abbreviation to probe
+        required: false
+        default: ja
+        type: string
+
+concurrency:
+  group: duolingo-live-canary
+  cancel-in-progress: false
+
+jobs:
+  canary:
+    name: Read-only endpoint and state canary
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      DUOLINGO_USERNAME: ${{ secrets.DUOLINGO_USERNAME }}
+      DUOLINGO_JWT: ${{ secrets.DUOLINGO_JWT }}
+      CANARY_LANGUAGE: ${{ inputs.language || vars.DUOLINGO_CANARY_LANGUAGE || 'ja' }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Require canary credentials
+        run: |
+          test -n "$DUOLINGO_USERNAME"
+          test -n "$DUOLINGO_JWT"
+
+      - name: Install and build
+        run: npm ci && npm run build
+
+      - name: Diagnose endpoint contracts
+        run: node dist/cli.js doctor --language "$CANARY_LANGUAGE" --json
+
+      - name: Verify observable state remains unchanged
+        run: node dist/cli.js canary --language "$CANARY_LANGUAGE"

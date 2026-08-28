@@ -1,7 +1,8 @@
 # duolingo-cli Command Reference
 
-All data commands are read-only. Add `--json` for structured JSON; otherwise
-they return Markdown.
+All remote Duolingo operations are read-only. Snapshot commands manage only
+opt-in local files. Add `--json` for structured JSON; otherwise commands return
+Markdown.
 
 ## Setup and Authorization
 
@@ -63,6 +64,7 @@ hearts, or modify a goal.
 duolingo-cli language list [--username USER] [--abbreviations] [--json]
 duolingo-cli language words --language LANG [--username USER] [--json]
 duolingo-cli language recent-words --language LANG [--limit 1..100] [--username USER] [--json]
+duolingo-cli language export --language LANG [--username USER] [--format json|csv|tsv|anki] [--limit 1..1000]
 duolingo-cli language skills --language LANG [--username USER] [--json]
 ```
 
@@ -71,6 +73,30 @@ duolingo-cli language skills --language LANG [--username USER] [--json]
 newest-first learned-date ranking. It requires the requested language to be the
 active course. Exact per-word timestamps are unavailable, so do not describe
 the result as words learned within an exact date range.
+
+`language export` writes to stdout. Redirect it to a user-selected path. CSV
+and TSV preserve source fields; `anki` is a tab-separated import table with
+Front, Back, Audio URL, Tags, and Stable ID columns.
+
+## Diagnostics and Local History
+
+```bash
+duolingo-cli doctor [--language LANG] [--json]
+duolingo-cli canary --language LANG [--json]
+duolingo-cli snapshot init --language LANG [--retention 2..365] [--json]
+duolingo-cli snapshot capture --language LANG [--json]
+duolingo-cli snapshot status --language LANG [--json]
+duolingo-cli snapshot diff --language LANG [--json]
+duolingo-cli snapshot disable --language LANG [--delete-data] [--json]
+```
+
+Use `doctor` to distinguish authentication, CAPTCHA, rate limit, schema drift,
+and upstream failures. A Canary compares observable state before and after its
+read probes; do not run it while the user is completing a lesson. Snapshots
+must be initialized explicitly, begin history at opt-in, and retain 90 captures
+by default. Never add `--delete-data` unless the user explicitly asks to erase
+the saved snapshots. `doctor` and snapshot operations other than `capture` can
+run without Duolingo credentials.
 
 ## Review
 

@@ -97,6 +97,7 @@ or change streak goals.
 duolingo-cli language list [--username USER] [--abbreviations] [--json]
 duolingo-cli language words --language LANG [--username USER] [--json]
 duolingo-cli language recent-words --language LANG [--limit 1..100] [--username USER] [--json]
+duolingo-cli language export --language LANG [--username USER] [--format json|csv|tsv|anki] [--limit 1..1000]
 duolingo-cli language skills --language LANG [--username USER] [--json]
 ```
 
@@ -107,6 +108,16 @@ learned-date ranking. Its JSON result includes `rank`, `text`, `translations`,
 `audio_url`, and `is_new`. Duolingo does not expose exact per-word timestamps,
 so this command cannot filter words learned within an exact date range. The
 requested language must be the account's active course.
+
+`language export` uses the shared versioned vocabulary contract. JSON preserves
+all fields; CSV and TSV contain the stable ID, word, translations, audio URL,
+and `is_new`; `anki` emits tab-separated Front, Back, Audio URL, Tags, and
+Stable ID columns. Output goes to stdout so the caller controls the destination:
+
+```bash
+duolingo-cli language export --language ja --format csv > japanese.csv
+duolingo-cli language export --language ja --format anki > japanese-anki.tsv
+```
 
 ### Review
 
@@ -131,6 +142,42 @@ learned-lexemes result. Activity entries without a skill ID remain in
 deduplication can produce fewer sentences. Omit `--from` to derive the base
 language from the matching course; pass it explicitly when the account has
 multiple matching courses and the intended base language is known.
+
+### Diagnostics and live canary
+
+```bash
+duolingo-cli doctor [--language LANG] [--json]
+duolingo-cli canary --language LANG [--json]
+```
+
+`doctor` distinguishes credential failures, CAPTCHA, rate limiting, missing
+resources, response-schema drift, and other network/upstream failures. With a
+language it also probes the Active Course vocabulary endpoint.
+
+`canary` reads state with two independent clients around a vocabulary probe and
+compares XP, streak, calendar size, course, hearts, gems, and lingots. A change
+returns exit code 1. Run it while no lesson is being completed, because
+legitimate concurrent learning also changes those fields.
+
+The scheduled GitHub workflow requires repository secrets
+`DUOLINGO_USERNAME` and `DUOLINGO_JWT`. Its log uses the summary format so
+private account counters are not published as JSON. Configure those secrets in
+GitHub settings; never commit them to the repository.
+
+### Opt-in local vocabulary snapshots
+
+```bash
+duolingo-cli snapshot init --language ja [--retention 2..365] [--json]
+duolingo-cli snapshot capture --language ja [--json]
+duolingo-cli snapshot status --language ja [--json]
+duolingo-cli snapshot diff --language ja [--json]
+duolingo-cli snapshot disable --language ja [--delete-data] [--json]
+```
+
+Snapshots cannot be captured before `init`. Retention defaults to 90 captures,
+and history begins only after opt-in. Files use owner-only permissions below
+the Duolingo Learn configuration directory. `disable` keeps existing files
+unless `--delete-data` is explicitly supplied. `diff` requires two captures.
 
 ### MCP compatibility
 

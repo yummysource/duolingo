@@ -8,6 +8,7 @@ import {
   DuolingoAuthError,
   DuolingoCaptchaError,
   DuolingoNotFoundError,
+  DuolingoRateLimitError,
 } from '../../src/client/errors.js';
 import type { DuolingoUserData } from '../../src/client/types.js';
 
@@ -97,7 +98,7 @@ function makeClientWithMockHttp(
       if (resp.status >= 400) {
         const err = Object.assign(new Error(`HTTP ${resp.status}`), {
           isAxiosError: true,
-          response: { status: resp.status, data: resp.data },
+          response: { status: resp.status, data: resp.data, headers: {} },
         });
         throw err;
       }
@@ -113,7 +114,7 @@ function makeClientWithMockHttp(
       if (resp.status >= 400) {
         const err = Object.assign(new Error(`HTTP ${resp.status}`), {
           isAxiosError: true,
-          response: { status: resp.status, data: resp.data },
+          response: { status: resp.status, data: resp.data, headers: {} },
         });
         throw err;
       }
@@ -218,6 +219,15 @@ describe('DuolingoClient', () => {
         ]),
       );
       await expect(client.getUserData()).rejects.toThrow(DuolingoCaptchaError);
+    });
+
+    it('throws a distinct rate-limit error on 429', async () => {
+      const client = makeClientWithMockHttp(
+        new Map([['/users/testuser', { status: 429, data: {} }]]),
+      );
+      await expect(client.getUserData()).rejects.toThrow(
+        DuolingoRateLimitError,
+      );
     });
   });
 

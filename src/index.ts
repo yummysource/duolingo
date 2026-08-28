@@ -20,7 +20,25 @@ export {
   DuolingoNotFoundError,
   DuolingoCaptchaError,
   DuolingoLanguageNotFoundError,
+  DuolingoRateLimitError,
+  DuolingoSchemaError,
 } from './client/errors.js';
+
+// Shared application contracts and vocabulary use case
+export {
+  VocabularyWordSchema,
+  VocabularyDatasetSchema,
+  VocabularyExportFormatSchema,
+} from './contracts/vocabulary.js';
+export {
+  getVocabularyDataset,
+  serializeVocabulary,
+} from './services/vocabulary.js';
+export type {
+  VocabularyWord,
+  VocabularyDataset,
+  VocabularyExportFormat,
+} from './contracts/vocabulary.js';
 
 // All public types
 export type {

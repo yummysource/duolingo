@@ -47,3 +47,26 @@ export class DuolingoLanguageNotFoundError extends DuolingoClientError {
     this.name = 'DuolingoLanguageNotFoundError';
   }
 }
+
+/** Raised when Duolingo asks the client to slow down. */
+export class DuolingoRateLimitError extends DuolingoClientError {
+  readonly retryAfter: string | null;
+
+  constructor(retryAfter?: string) {
+    super(
+      retryAfter === undefined
+        ? 'Duolingo rate limit reached. Retry later.'
+        : `Duolingo rate limit reached. Retry after ${retryAfter}.`,
+    );
+    this.name = 'DuolingoRateLimitError';
+    this.retryAfter = retryAfter ?? null;
+  }
+}
+
+/** Raised when a response no longer matches the fields the client requires. */
+export class DuolingoSchemaError extends DuolingoClientError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'DuolingoSchemaError';
+  }
+}

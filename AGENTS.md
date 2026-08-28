@@ -72,12 +72,18 @@ duolingo-cli goal streak [--json]
 duolingo-cli language list [--username USER] [--abbreviations] [--json]
 duolingo-cli language words --language LANG [--username USER] [--json]
 duolingo-cli language recent-words --language LANG [--limit 1..100] [--username USER] [--json]
+duolingo-cli language export --language LANG [--format json|csv|tsv|anki] [--limit 1..1000]
 duolingo-cli language skills --language LANG [--username USER] [--json]
 
 # Review
 duolingo-cli review recent --language LANG [--days 1..90] [--json]
 duolingo-cli review sentences --language LANG [--from LANG] [--sessions 1..10] [--limit 1..100] [--json]
 duolingo-cli review material --language LANG [--from LANG] [--topics 1..20] [--sessions 1..10] [--limit 1..100] [--json]
+
+# Diagnostics and opt-in local history
+duolingo-cli doctor [--language LANG] [--json]
+duolingo-cli canary --language LANG [--json]
+duolingo-cli snapshot init|capture|status|diff|disable --language LANG [options]
 ```
 
 Review sentences are current randomized practice samples, not exact historical

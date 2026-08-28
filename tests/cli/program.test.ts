@@ -29,6 +29,10 @@ function createDependencies(): CliDependencies & {
     promptSecret: vi.fn().mockResolvedValue('prompt-secret'),
     validateCredentials: vi.fn().mockResolvedValue(undefined),
     runTool: vi.fn().mockResolvedValue('{"ok":true}'),
+    exportVocabulary: vi.fn().mockResolvedValue('exported\n'),
+    runDoctor: vi.fn().mockResolvedValue({ ok: true, output: 'healthy' }),
+    runCanary: vi.fn().mockResolvedValue({ ok: true, output: 'pass' }),
+    runSnapshot: vi.fn().mockResolvedValue('{"enabled":true}'),
     startMcp: vi.fn().mockResolvedValue(undefined),
     stdout: (text) => output.push(text),
     stderr: (text) => errors.push(text),
@@ -51,6 +55,11 @@ describe('runCli', () => {
     expect(deps.output.join('')).toContain('duolingo-cli social leaderboard');
     expect(deps.output.join('')).toContain('duolingo-cli resource hearts');
     expect(deps.output.join('')).toContain('duolingo-cli goal streak');
+    expect(deps.output.join('')).toContain('duolingo-cli doctor');
+    expect(deps.output.join('')).toContain('duolingo-cli snapshot');
+    expect(deps.output.join('')).toContain(
+      'language export --language LANG [--username USER]',
+    );
     expect(deps.errors).toEqual([]);
   });
 
@@ -266,6 +275,115 @@ describe('runCli', () => {
     ).resolves.toBe(1);
     expect(deps.runTool).not.toHaveBeenCalled();
     expect(deps.errors.join('')).toContain('--limit');
+  });
+
+  it('exports vocabulary in an explicit native format', async () => {
+    await expect(
+      runCli(
+        [
+          'language',
+          'export',
+          '--language',
+          'ja',
+          '--format',
+          'anki',
+          '--limit',
+          '20',
+        ],
+        deps,
+      ),
+    ).resolves.toBe(0);
+    expect(deps.exportVocabulary).toHaveBeenCalledWith(
+      { language: 'ja', format: 'anki', limit: 20 },
+      expect.objectContaining({ username: 'stored-user' }),
+    );
+    expect(deps.output.join('')).toBe('exported\n');
+  });
+
+  it('runs doctor and preserves its health exit status', async () => {
+    await expect(
+      runCli(['doctor', '--language', 'ja', '--json'], deps),
+    ).resolves.toBe(0);
+    expect(deps.runDoctor).toHaveBeenCalledWith(
+      'ja',
+      true,
+      expect.objectContaining({ source: 'keychain' }),
+    );
+
+    vi.mocked(deps.runDoctor).mockResolvedValue({
+      ok: false,
+      output: 'failed',
+    });
+    await expect(runCli(['doctor'], deps)).resolves.toBe(1);
+  });
+
+  it('lets doctor diagnose missing local credentials', async () => {
+    vi.mocked(deps.credentials.resolve).mockResolvedValue(null);
+    vi.mocked(deps.runDoctor).mockResolvedValue({
+      ok: false,
+      output: 'credentials_missing',
+    });
+    await expect(runCli(['doctor', '--json'], deps)).resolves.toBe(1);
+    expect(deps.runDoctor).toHaveBeenCalledWith(undefined, true, null);
+  });
+
+  it('lets doctor diagnose credential resolution errors', async () => {
+    const resolutionError = new Error('partial credential configuration');
+    vi.mocked(deps.credentials.resolve).mockRejectedValue(resolutionError);
+    vi.mocked(deps.runDoctor).mockResolvedValue({
+      ok: false,
+      output: '{"status":"failed","code":"credentials_invalid"}',
+    });
+
+    await expect(runCli(['doctor', '--json'], deps)).resolves.toBe(1);
+    expect(deps.runDoctor).toHaveBeenCalledWith(
+      undefined,
+      true,
+      null,
+      resolutionError,
+    );
+    expect(deps.errors).toEqual([]);
+  });
+
+  it('requires a language for the live canary', async () => {
+    await expect(runCli(['canary', '--json'], deps)).resolves.toBe(1);
+    expect(deps.runCanary).not.toHaveBeenCalled();
+    expect(deps.errors.join('')).toContain('--language');
+  });
+
+  it('routes snapshot lifecycle commands', async () => {
+    await expect(
+      runCli(
+        ['snapshot', 'init', '--language', 'ja', '--retention', '30', '--json'],
+        deps,
+      ),
+    ).resolves.toBe(0);
+    expect(deps.runSnapshot).toHaveBeenCalledWith(
+      {
+        action: 'init',
+        language: 'ja',
+        retention: 30,
+        deleteData: false,
+        json: true,
+      },
+      expect.objectContaining({ username: 'stored-user' }),
+    );
+  });
+
+  it('allows local snapshot status without Duolingo credentials', async () => {
+    vi.mocked(deps.credentials.resolve).mockResolvedValue(null);
+    await expect(
+      runCli(['snapshot', 'status', '--language', 'ja', '--json'], deps),
+    ).resolves.toBe(0);
+    expect(deps.runSnapshot).toHaveBeenCalledWith(
+      {
+        action: 'status',
+        language: 'ja',
+        deleteData: false,
+        json: true,
+      },
+      null,
+    );
   });
 
   it('rejects unsupported leaderboard units before invoking a tool', async () => {

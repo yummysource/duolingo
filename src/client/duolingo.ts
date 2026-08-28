@@ -11,6 +11,7 @@ import {
   DuolingoCaptchaError,
   DuolingoClientError,
   DuolingoNotFoundError,
+  DuolingoRateLimitError,
 } from './errors.js';
 import type {
   DuolingoUserData,
@@ -693,6 +694,12 @@ export class DuolingoClient {
         }
         if (status === 404) {
           throw new DuolingoNotFoundError(`Resource not found: ${url}`);
+        }
+        if (status === 429) {
+          const retryAfter: unknown = err.response.headers['retry-after'];
+          throw new DuolingoRateLimitError(
+            typeof retryAfter === 'string' ? retryAfter : undefined,
+          );
         }
         throw new DuolingoClientError(
           `Duolingo API error ${status}: ${JSON.stringify(body)}`,

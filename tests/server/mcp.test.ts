@@ -232,6 +232,20 @@ describe('MCP Server: tool discovery', () => {
         streakGoal: null,
       }),
       getLanguageVoices: vi.fn().mockResolvedValue(['voice1']),
+      getCurrentCourse: vi.fn().mockResolvedValue({
+        id: 'DUOLINGO_ES_EN',
+        subject: 'language',
+        topic: 'es',
+        learningLanguage: 'es',
+        fromLanguage: 'en',
+      }),
+      getLearnedLexemes: vi.fn().mockResolvedValue([
+        {
+          text: 'hola',
+          translations: ['hello'],
+          audioURL: 'https://example.com/hola.mp3',
+        },
+      ]),
       buildAudioUrl: vi
         .fn()
         .mockResolvedValue('https://cdn.example.com/audio.mp3'),
@@ -279,6 +293,7 @@ describe('MCP Server: tool discovery', () => {
       'duolingo_get_streak_info',
       'duolingo_get_unknown_topics',
       'duolingo_get_user_info',
+      'duolingo_get_vocabulary',
     ].sort();
 
     expect(names).toEqual(expectedTools);
@@ -296,6 +311,25 @@ describe('MCP Server: tool discovery', () => {
         `${tool.name} should have an inputSchema`,
       ).toBeDefined();
     }
+  });
+
+  it('advertises and returns the versioned vocabulary output schema', async () => {
+    const { tools } = await client.listTools();
+    const tool = tools.find(
+      (candidate) => candidate.name === 'duolingo_get_vocabulary',
+    );
+    expect(tool?.outputSchema).toBeDefined();
+
+    const result = await client.callTool({
+      name: 'duolingo_get_vocabulary',
+      arguments: { language_abbr: 'es', response_format: 'json' },
+    });
+    expect(result.isError).not.toBe(true);
+    expect(result.structuredContent).toMatchObject({
+      schema_version: '1',
+      language: 'es',
+      count: 1,
+    });
   });
 
   it('tools have readOnlyHint = true (no destructive tools)', async () => {

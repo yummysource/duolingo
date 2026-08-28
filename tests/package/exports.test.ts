@@ -22,6 +22,12 @@ import {
   DuolingoNotFoundError,
   DuolingoCaptchaError,
   DuolingoLanguageNotFoundError,
+  DuolingoRateLimitError,
+  DuolingoSchemaError,
+  VocabularyDatasetSchema,
+  VocabularyExportFormatSchema,
+  getVocabularyDataset,
+  serializeVocabulary,
 } from '../../src/index.js';
 
 // Type-only imports — these are compile-time checks; if a type is missing
@@ -61,7 +67,16 @@ import type {
   DuolingoSessionResponse,
   DuolingoChallenge,
   DuolingoToken,
+  VocabularyWord,
+  VocabularyDataset,
+  VocabularyExportFormat,
 } from '../../src/index.js';
+
+type _VocabularyCompileCheck = [
+  VocabularyWord,
+  VocabularyDataset,
+  VocabularyExportFormat,
+];
 
 // ---------------------------------------------------------------------------
 // Runtime value exports
@@ -172,6 +187,13 @@ describe('Package exports: runtime values', () => {
       expect(err.name).toBe('DuolingoLanguageNotFoundError');
     });
 
+    it('exports rate-limit and schema errors', () => {
+      expect(new DuolingoRateLimitError()).toBeInstanceOf(DuolingoClientError);
+      expect(new DuolingoSchemaError('drift')).toBeInstanceOf(
+        DuolingoClientError,
+      );
+    });
+
     it('error instanceof checks work correctly across the hierarchy', () => {
       const errors = [
         new DuolingoAuthError('x'),
@@ -184,6 +206,13 @@ describe('Package exports: runtime values', () => {
         expect(err).toBeInstanceOf(DuolingoClientError);
       }
     });
+  });
+
+  it('exports shared vocabulary contracts and use cases', () => {
+    expect(typeof VocabularyDatasetSchema.parse).toBe('function');
+    expect(VocabularyExportFormatSchema.parse('anki')).toBe('anki');
+    expect(typeof getVocabularyDataset).toBe('function');
+    expect(typeof serializeVocabulary).toBe('function');
   });
 });
 

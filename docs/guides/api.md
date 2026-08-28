@@ -70,6 +70,30 @@ compatibility. Pass `{ sortBy: 'LEARNED_DATE', limit: 10 }` for newest-first
 vocabulary. Duolingo returns ordering but no exact learned timestamp for each
 lexeme.
 
+## Shared vocabulary contract and export
+
+```typescript
+import {
+  getVocabularyDataset,
+  serializeVocabulary,
+  VocabularyDatasetSchema,
+} from '@yummysource/duolingo-cli';
+
+const dataset = await getVocabularyDataset(client, 'ja', {
+  sort: 'learned_date',
+  limit: 20,
+});
+VocabularyDatasetSchema.parse(dataset);
+
+const csv = serializeVocabulary(dataset, 'csv');
+const ankiTsv = serializeVocabulary(dataset, 'anki');
+```
+
+The versioned dataset is shared by the API, CLI export, and
+`duolingo_get_vocabulary` MCP tool. Stable IDs are deterministic language/word
+keys for deduplication; they are project identifiers, not official Duolingo
+lexeme IDs. Export never invents absent parts of speech or grammatical fields.
+
 ## Public methods
 
 | Area     | Methods                                                                                                      | Notes                                                               |
@@ -140,6 +164,8 @@ import {
   DuolingoClientError,
   DuolingoLanguageNotFoundError,
   DuolingoNotFoundError,
+  DuolingoRateLimitError,
+  DuolingoSchemaError,
 } from '@yummysource/duolingo-cli';
 
 try {

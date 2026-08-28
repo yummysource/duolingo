@@ -10,6 +10,8 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { getClient } from '../client/duolingo.js';
+import { VocabularyDatasetSchema } from '../contracts/vocabulary.js';
+import { getVocabularyDataset } from '../services/vocabulary.js';
 import {
   handleError,
   ResponseFormatSchema,
@@ -103,6 +105,67 @@ export function registerLanguageTools(server: McpServer): void {
         return { content: [{ type: 'text', text: lines.join('\n') }] };
       } catch (err) {
         return { content: [{ type: 'text', text: handleError(err) }] };
+      }
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // Get Versioned Vocabulary
+  // -------------------------------------------------------------------------
+  /** Register the shared structured vocabulary contract used by every interface. */
+  server.registerTool(
+    'duolingo_get_vocabulary',
+    {
+      title: 'Get Duolingo Vocabulary Dataset',
+      description:
+        "Get the Active Course's learned lexemes using the versioned vocabulary schema. " +
+        'Returns stable deduplication IDs, translations, available audio URLs, and source metadata.',
+      inputSchema: {
+        language_abbr: LanguageAbbrSchema,
+        username: UsernameFieldSchema,
+        sort: z.enum(['alphabetical', 'learned_date']).default('alphabetical'),
+        limit: z.number().int().min(1).max(1000).optional(),
+        response_format: ResponseFormatSchema,
+      },
+      outputSchema: VocabularyDatasetSchema,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
+    async ({ language_abbr, username, sort, limit, response_format }) => {
+      try {
+        const dataset = await getVocabularyDataset(getClient(), language_abbr, {
+          username,
+          sort,
+          limit,
+        });
+        const text =
+          response_format === 'json'
+            ? JSON.stringify(dataset, null, 2)
+            : [
+                `# Vocabulary (${language_abbr.toUpperCase()})`,
+                '',
+                `- **Words**: ${dataset.count}`,
+                `- **Course**: ${dataset.course_id}`,
+                `- **Captured**: ${dataset.captured_at}`,
+                '',
+                ...dataset.words.map(
+                  (word) =>
+                    `- **${word.text}** — ${word.translations.join(', ') || 'No translation'}`,
+                ),
+              ].join('\n');
+        return {
+          content: [{ type: 'text', text }],
+          structuredContent: dataset,
+        };
+      } catch (err) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: handleError(err) }],
+        };
       }
     },
   );

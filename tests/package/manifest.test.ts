@@ -31,6 +31,12 @@ describe('npm package manifest', () => {
   it('includes the bilingual README and detailed usage guides', async () => {
     const files = (await readManifest()).files;
     expect(files).toContain('README.zh-TW.md');
-    expect(files).toContain('docs/guides/**');
+    expect(files).toContain('docs/guides/api.md');
+    expect(files).toContain('docs/guides/cli.md');
+    expect(files).toContain('docs/guides/mcp.md');
+    expect(files).toContain('docs/guides/skill.md');
+    expect(files).not.toContain('docs/guides/**');
+    expect(files).not.toContain('docs/research/**');
+    expect(files).not.toContain('docs/plans/**');
   });
 });

@@ -60,7 +60,7 @@ the platform's secret facility instead of hard-coding them in JSON.
 - Errors: text content beginning with `Error:` rather than uncaught handler
   exceptions
 - Output: Markdown by default and JSON for structured-data tools when
-  `response_format` is `json`
+  `response_format` is `json`; versioned tools also return `structuredContent`
 - Safety: every tool is annotated as read-only and non-destructive
 
 ## Tool groups
@@ -75,6 +75,11 @@ leaderboard, shop catalogue, hearts, currencies, and streak goals.
 Language details and progress, learned and unknown topics, mastered and
 reviewable topics, known words, recent words, learned skills, TTS voices, and
 audio URLs.
+
+`duolingo_get_vocabulary` returns the versioned Active Course vocabulary
+dataset shared with the TypeScript API and CLI export. Its advertised
+`outputSchema` validates `structuredContent`, while text content remains
+available in Markdown or JSON for older clients.
 
 `duolingo_get_recent_words` accepts `language_abbr`, optional `username`, a
 `limit` from 1 to 100 (default 10), and `response_format`. It preserves

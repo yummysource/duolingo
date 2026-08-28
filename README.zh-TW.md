@@ -33,6 +33,17 @@ Duolingo Client 與工具邏輯，不需要為不同使用方式重複實作。
 如果只需要查詢資料，優先使用 CLI；需要整合進程式時使用 API；需要跨 Agent
 自然語言流程時使用 Skill；既有環境已採用 MCP 時則保留 MCP Server。
 
+### 能力邊界
+
+| 能力                         | API | CLI | Skill | MCP |
+| ---------------------------- | --- | --- | ----- | --- |
+| 版本化詞彙資料集             | ✓   | ✓   | ✓     | ✓   |
+| CSV / TSV / Anki 匯出        | ✓   | ✓   | ✓     | —   |
+| 憑證與 Schema 診斷           | —   | ✓   | ✓     | —   |
+| 前後狀態 Live Canary         | —   | ✓   | ✓     | —   |
+| 主動啟用的本機快照與差異比較 | —   | ✓   | ✓     | —   |
+| Topic、Progress 與 TTS       | ✓   | —   | —     | ✓   |
+
 ## 依情境快速開始
 
 ### 查看最近七天的西班牙文學習並準備複習材料
@@ -137,11 +148,33 @@ duolingo-cli goal streak [--json]
 duolingo-cli language list [--username USER] [--abbreviations] [--json]
 duolingo-cli language words --language LANG [--username USER] [--json]
 duolingo-cli language recent-words --language LANG [--limit 1..100] [--username USER] [--json]
+duolingo-cli language export --language LANG [--format json|csv|tsv|anki] [--limit 1..1000]
 duolingo-cli language skills --language LANG [--username USER] [--json]
 ```
 
 `language recent-words` 預設列出 Duolingo 依學習日期排序的最新 10 個單字。
 API 不提供每個單字的精確學習時間，因此這不是「最近 N 天新增單字」查詢。
+
+原生匯出範例：
+
+```bash
+duolingo-cli language export --language ja --format csv > japanese.csv
+duolingo-cli language export --language ja --format anki > japanese-anki.tsv
+```
+
+### 診斷、Canary 與本機快照
+
+```bash
+duolingo-cli doctor --language ja --json
+duolingo-cli canary --language ja --json
+duolingo-cli snapshot init --language ja --retention 90 --json
+duolingo-cli snapshot capture --language ja --json
+duolingo-cli snapshot diff --language ja --json
+duolingo-cli snapshot disable --language ja --delete-data --json
+```
+
+快照必須先明確執行 `init`，只從啟用後開始累積。資料保存在擁有者限定讀寫的
+本機設定目錄；`disable` 預設保留資料，只有 `--delete-data` 才會刪除。
 
 ### Review
 

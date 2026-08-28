@@ -2,6 +2,7 @@ import type {
   DuolingoCredentials,
   ResolvedCredentials,
 } from './credentials.js';
+import type { VocabularyExportFormat } from '../contracts/vocabulary.js';
 
 const HELP = `duolingo-cli - read-only Duolingo learning data
 
@@ -21,10 +22,14 @@ Usage:
   duolingo-cli language list [--username USER] [--abbreviations] [--json]
   duolingo-cli language words --language LANG [--username USER] [--json]
   duolingo-cli language recent-words --language LANG [--limit N] [--username USER] [--json]
+  duolingo-cli language export --language LANG [--username USER] [--format json|csv|tsv|anki] [--limit N]
   duolingo-cli language skills --language LANG [--username USER] [--json]
   duolingo-cli review recent --language LANG [--days N] [--json]
   duolingo-cli review sentences --language LANG [--from LANG] [--sessions N] [--limit N] [--json]
   duolingo-cli review material --language LANG [--from LANG] [--topics N] [--sessions N] [--limit N] [--json]
+  duolingo-cli doctor [--language LANG] [--json]
+  duolingo-cli canary --language LANG [--json]
+  duolingo-cli snapshot init|capture|status|diff|disable --language LANG [--retention N] [--delete-data] [--json]
   duolingo-cli mcp
 
 Global options:
@@ -52,9 +57,48 @@ export interface CliDependencies {
     args: Record<string, unknown>,
     credentials: DuolingoCredentials,
   ) => Promise<string>;
+  exportVocabulary: (
+    request: VocabularyExportRequest,
+    credentials: DuolingoCredentials,
+  ) => Promise<string>;
+  runDoctor: (
+    language: string | undefined,
+    json: boolean,
+    credentials: ResolvedCredentials | null,
+    credentialError?: unknown,
+  ) => Promise<CliOperationResult>;
+  runCanary: (
+    language: string,
+    json: boolean,
+    credentials: ResolvedCredentials,
+  ) => Promise<CliOperationResult>;
+  runSnapshot: (
+    request: SnapshotRequest,
+    credentials: ResolvedCredentials | null,
+  ) => Promise<string>;
   startMcp: (credentials: DuolingoCredentials) => Promise<void>;
   stdout: (text: string) => void;
   stderr: (text: string) => void;
+}
+
+export interface CliOperationResult {
+  ok: boolean;
+  output: string;
+}
+
+export interface VocabularyExportRequest {
+  language: string;
+  username?: string;
+  format: VocabularyExportFormat;
+  limit?: number;
+}
+
+export interface SnapshotRequest {
+  action: 'init' | 'capture' | 'status' | 'diff' | 'disable';
+  language: string;
+  retention?: number;
+  deleteData: boolean;
+  json: boolean;
 }
 
 class CliUsageError extends Error {
@@ -393,6 +437,78 @@ function buildReviewInvocation(
   throw new CliUsageError(`Unknown command: review ${action ?? ''}`.trim());
 }
 
+function parseVocabularyExport(tokens: string[]): VocabularyExportRequest {
+  const options = parseOptions(
+    tokens,
+    ['--language', '--username', '--format', '--limit'],
+    [],
+  );
+  const request: VocabularyExportRequest = {
+    language: requireOption(options, '--language'),
+    format:
+      readChoice(options, '--format', [
+        'json',
+        'csv',
+        'tsv',
+        'anki',
+      ] as const) ?? 'json',
+  };
+  const username = options.values.get('--username');
+  if (username !== undefined) request.username = username;
+  const limit = readInteger(options, '--limit', 1, 1000);
+  if (limit !== undefined) request.limit = limit;
+  return request;
+}
+
+function parseDiagnostic(
+  tokens: string[],
+  requireLanguage: boolean,
+): { language: string | undefined; json: boolean } {
+  const options = parseOptions(tokens, ['--language'], ['--json']);
+  const language = options.values.get('--language');
+  if (requireLanguage && language === undefined) {
+    throw new CliUsageError('Option --language is required.');
+  }
+  return { language, json: options.flags.has('--json') };
+}
+
+function parseSnapshot(
+  action: string | undefined,
+  tokens: string[],
+): SnapshotRequest {
+  if (
+    action !== 'init' &&
+    action !== 'capture' &&
+    action !== 'status' &&
+    action !== 'diff' &&
+    action !== 'disable'
+  ) {
+    throw new CliUsageError(`Unknown command: snapshot ${action ?? ''}`.trim());
+  }
+  const options = parseOptions(
+    tokens,
+    ['--language', '--retention'],
+    ['--delete-data', '--json'],
+  );
+  const request: SnapshotRequest = {
+    action,
+    language: requireOption(options, '--language'),
+    deleteData: options.flags.has('--delete-data'),
+    json: options.flags.has('--json'),
+  };
+  const retention = readInteger(options, '--retention', 2, 365);
+  if (retention !== undefined) request.retention = retention;
+  if (action !== 'init' && request.retention !== undefined) {
+    throw new CliUsageError('--retention is only valid for snapshot init.');
+  }
+  if (action !== 'disable' && request.deleteData) {
+    throw new CliUsageError(
+      '--delete-data is only valid for snapshot disable.',
+    );
+  }
+  return request;
+}
+
 function buildToolInvocation(argv: string[]): ToolInvocation {
   const [group, action, ...tokens] = argv;
   if (group === 'account') return buildAccountInvocation(action, tokens);
@@ -503,6 +619,59 @@ export async function runCli(
       if (argv.length > 1)
         throw new CliUsageError('mcp does not accept options.');
       await dependencies.startMcp(await requireCredentials(dependencies));
+      return 0;
+    }
+    if (argv[0] === 'language' && argv[1] === 'export') {
+      const output = await dependencies.exportVocabulary(
+        parseVocabularyExport(argv.slice(2)),
+        await requireCredentials(dependencies),
+      );
+      dependencies.stdout(output.endsWith('\n') ? output : `${output}\n`);
+      return 0;
+    }
+    if (argv[0] === 'doctor') {
+      const options = parseDiagnostic(argv.slice(1), false);
+      let credentials: ResolvedCredentials | null;
+      let credentialError: unknown;
+      try {
+        credentials = await dependencies.credentials.resolve(dependencies.env);
+      } catch (error) {
+        credentials = null;
+        credentialError = error;
+      }
+      const result =
+        credentialError === undefined
+          ? await dependencies.runDoctor(
+              options.language,
+              options.json,
+              credentials,
+            )
+          : await dependencies.runDoctor(
+              options.language,
+              options.json,
+              null,
+              credentialError,
+            );
+      writeLine(dependencies.stdout, result.output);
+      return result.ok ? 0 : 1;
+    }
+    if (argv[0] === 'canary') {
+      const options = parseDiagnostic(argv.slice(1), true);
+      const result = await dependencies.runCanary(
+        options.language ?? '',
+        options.json,
+        await requireCredentials(dependencies),
+      );
+      writeLine(dependencies.stdout, result.output);
+      return result.ok ? 0 : 1;
+    }
+    if (argv[0] === 'snapshot') {
+      const request = parseSnapshot(argv[1], argv.slice(2));
+      const output = await dependencies.runSnapshot(
+        request,
+        await dependencies.credentials.resolve(dependencies.env),
+      );
+      writeLine(dependencies.stdout, output);
       return 0;
     }
 

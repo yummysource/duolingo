@@ -42,6 +42,21 @@ Choose the thinnest layer that matches the job:
 Every provided operation is read-only. The project does not submit answers,
 purchase items, alter progress, or modify account settings.
 
+### Capability boundaries
+
+| Capability                          | API | CLI | Skill | MCP |
+| ----------------------------------- | --- | --- | ----- | --- |
+| Versioned vocabulary dataset        | ✓   | ✓   | ✓     | ✓   |
+| CSV / TSV / Anki-friendly export    | ✓   | ✓   | ✓     | —   |
+| Credential and schema diagnostics   | —   | ✓   | ✓     | —   |
+| Before/after live state canary      | —   | ✓   | ✓     | —   |
+| Opt-in local snapshots and diffs    | —   | ✓   | ✓     | —   |
+| Topic categories, progress, and TTS | ✓   | —   | —     | ✓   |
+
+The CLI and Skill intentionally own local files and diagnostics. MCP exposes
+the shared vocabulary object as `structuredContent`; it does not write export
+or snapshot files.
+
 ## Quick Start by Scenario
 
 ### Review what you learned recently
@@ -139,9 +154,12 @@ duolingo-cli goal streak --json
 duolingo-cli language list --abbreviations --json
 duolingo-cli language words --language es --json
 duolingo-cli language recent-words --language ja --limit 10 --json
+duolingo-cli language export --language ja --format anki > japanese-anki.tsv
 duolingo-cli review recent --language es --days 7 --json
 duolingo-cli review sentences --language es --limit 10 --json
 duolingo-cli review material --language es --topics 5 --limit 10 --json
+duolingo-cli doctor --language ja --json
+duolingo-cli canary --language ja --json
 ```
 
 Run `duolingo-cli --help` for the complete command grammar. Recent XP and
@@ -271,6 +289,7 @@ All tools are **read-only** — the server never modifies your Duolingo account.
 | `duolingo_get_reviewable_topics` | Learned but not fully mastered topics                     |
 | `duolingo_get_known_words`       | Set of known words for a language                         |
 | `duolingo_get_recent_words`      | Latest learned words in Duolingo's newest-first ranking   |
+| `duolingo_get_vocabulary`        | Versioned vocabulary dataset with structured MCP output   |
 | `duolingo_get_learned_skills`    | Full skill objects sorted by learning order               |
 | `duolingo_get_language_voices`   | Available TTS voice names for a language                  |
 | `duolingo_get_audio_url`         | Pronunciation audio URL for a word                        |
@@ -510,7 +529,7 @@ src/
 │   └── errors.ts      # Custom error classes
 └── tools/
     ├── account.ts     # Account tools (13)
-    ├── language.ts    # Language tools (11)
+    ├── language.ts    # Language tools (12)
     ├── review.ts      # Review tools (3)
     ├── shop.ts        # Utility tools (2)
     └── helpers.ts     # Shared utilities (error handling, Zod schemas)

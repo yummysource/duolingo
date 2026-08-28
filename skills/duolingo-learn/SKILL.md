@@ -1,19 +1,28 @@
 ---
 name: duolingo-learn
-description: Use when users want to inspect Duolingo accounts, courses, streaks, activity, social data, resources, vocabulary, practice sentences, or review material through duolingo-cli.
+description: Use when users want to inspect Duolingo learning data, export vocabulary for CSV or Anki, diagnose CLI authentication or API failures, run a read-only state canary, or manage opt-in local vocabulary history through duolingo-cli.
+metadata:
+  cli-package: '@yummysource/duolingo-cli'
+  minimum-cli-version: '1.1.0'
 ---
 
 # Duolingo Learn
 
 Use `duolingo-cli` for read-only Duolingo learning queries. It provides stable,
 structured commands without requiring separate protocol configuration.
+It requires Node.js 18 or newer and CLI version 1.1.0 or newer.
 
 ## Before a Query
 
-1. Confirm the CLI exists with `duolingo-cli --version`. If it is missing, tell
-   the user to install `@yummysource/duolingo-cli` globally with npm.
-2. Run `duolingo-cli auth show --status`.
-3. If it prints `unauthorized`, stop and ask the user to run
+1. Confirm `duolingo-cli --version` is 1.1.0 or newer. If it is missing or
+   older, stop and ask the user to run
+   `npm install -g @yummysource/duolingo-cli@latest`.
+2. Determine whether the operation contacts Duolingo. `doctor` and local
+   `snapshot init`, `status`, `diff`, and `disable` can run without credentials;
+   do not block those commands on an authorization preflight.
+3. Before any remote data command, Live Canary, or `snapshot capture`, run
+   `duolingo-cli auth show --status`.
+4. If it prints `unauthorized`, stop and ask the user to run
    `duolingo-cli auth init` in their own interactive terminal. Resume only after
    authorization succeeds.
 
@@ -54,7 +63,15 @@ count instead of claiming the requested count was reached.
 
 State that limitation whenever a request asks for exact past lesson content.
 Do not claim that a query changes lessons, progress, streaks, answers, or the
-account: all exposed commands are read-only.
+account: every remote operation is read-only. Snapshot commands can write or
+delete only local files after the required explicit approval.
+
+Use `language export` when the user asks for CSV, TSV, or Anki data; do not
+reconstruct those formats manually. For historical vocabulary changes, check
+`snapshot status` first. If snapshots are disabled, explain that history starts
+only after the user explicitly approves `snapshot init`. Never enable snapshot
+storage or use `snapshot disable --delete-data` without explicit approval. Use
+`doctor` for authentication or upstream-shape failures.
 
 ## Handle Failures
 

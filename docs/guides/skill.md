@@ -58,10 +58,13 @@ the maintained command grammar and defaults.
 - Course enrolments, friends, and weekly or monthly leaderboards.
 - Hearts, currency balances, shop items, and streak goals.
 - Known vocabulary, latest learned words, and learned skills.
+- Native JSON, CSV, TSV, and Anki-friendly vocabulary export.
 - Recent XP activity mapped to skills and words.
 - Current practice-sentence sampling.
 - Review bundles based on weak topics, vocabulary, and practice samples.
 - Authorization preflight and safe recovery instructions.
+- Credential/schema diagnostics and read-only Live Canary routing.
+- Explicitly approved local vocabulary snapshots and diffs.
 
 ## Example requests
 
@@ -70,10 +73,12 @@ the maintained command grammar and defaults.
 - “Show my streak, daily XP, and next streak goal.”
 - “List my courses and this week's friend leaderboard.”
 - “Export my known French words as JSON.”
+- “Export my Japanese vocabulary as an Anki TSV.”
 - “List the latest 10 Japanese words I learned.”
 - “Summarize my Spanish activity from the last 14 days.”
 - “Prepare up to 10 Spanish review sentences based on my weak topics.”
 - “Show my profile and then build this week's review bundle.”
+- “Enable 90-capture Japanese vocabulary history, then capture today.”
 
 For structured tasks, the Skill selects CLI commands with `--json`, combines
 the results, and reports actual counts rather than assuming requested limits
@@ -128,6 +133,7 @@ When adapting or redistributing the Skill, preserve these invariants:
 4. Route detailed command syntax to `references/cli-commands.md`.
 5. Never embed credentials or direct users to reveal tokens in conversation.
 6. Preserve the exact-history and current-sampling limitations.
+7. Require explicit approval before enabling snapshots or deleting their data.
 
 ## Updating
 
