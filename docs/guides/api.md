@@ -33,10 +33,18 @@ CLI credential manager is intentionally separate from the library constructor.
 ```typescript
 const legacy = await client.getUserData();
 const current = await client.getUserDataV2(legacy.id);
+const path = await client.getCurrentCourse(legacy.id);
+const words = await client.getLearnedLexemes(
+  path.learningLanguage,
+  path.fromLanguage,
+  legacy.id,
+);
 
 console.log({
   username: legacy.username,
   streak: current.streak,
+  pathSections: path.pathSectioned.length,
+  learnedWords: words.length,
   courses: current.courses.map((course) => ({
     subject: course.subject,
     title: course.title,
@@ -45,15 +53,18 @@ console.log({
 });
 ```
 
-The legacy user endpoint contains language trees, skills, words, and calendars.
-The current endpoint contains richer course, subscription, streak, health, and
-currency fields. Many workflows need both representations.
+The legacy user endpoint contains language trees and calendars, but modern
+courses may leave its skills and words empty. `getCurrentCourse` supplies the
+active learning path and `getLearnedLexemes` supplies its vocabulary. The v2
+user endpoint contains richer course, subscription, streak, health, and
+currency fields.
 
 ## Public methods
 
 | Area     | Methods                                                                                                      | Notes                                                               |
 | -------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
 | User     | `getUserData`, `getUserDataV2`, `getUserDataById`, `getUserIdByUsername`                                     | Profile, courses, XP activity, and ID resolution                    |
+| Learning | `getCurrentCourse`, `getLearnedLexemes`                                                                      | Active path skills, units, and paginated learned vocabulary         |
 | Social   | `getFollowing`, `getFollowers`, `getLeaderboard`                                                             | Social graph and leaderboard data                                   |
 | Account  | `getShopItems`, `getHealth`, `getCurrencies`                                                                 | Read-only catalogue and balances                                    |
 | Streak   | `getStreakGoalCurrent`, `getStreakGoalNextOptions`                                                           | Current goal and available next goals                               |
@@ -83,10 +94,10 @@ const activity = spanish.calendar.map((entry) => {
 });
 ```
 
-New learning-path courses may provide calendar activity without legacy skills.
-Keep those records in XP and activity totals even when `skill` is `null`.
-Duolingo's activity records do not contain the exact prompts and answers shown
-in completed lessons.
+For a new learning-path course, use `getCurrentCourse` to map available skill
+IDs when the legacy array is empty. Keep records with no skill ID in XP and
+activity totals. Duolingo's activity records do not contain the exact prompts
+and answers shown in completed lessons.
 
 ## Sample current practice material
 
@@ -105,9 +116,9 @@ their parsing logic.
 
 ## Cache behavior
 
-`getUserData` and `getUserDataV2` cache results for the lifetime of a client
-instance. Use `invalidateCache(username?)` for legacy user data or construct a
-new client when a workflow needs a completely fresh snapshot.
+User, v2, current-course, and learned-lexeme results are cached for the lifetime
+of a client instance. Construct a new client when a workflow needs a completely
+fresh snapshot.
 
 ## Error handling
 

@@ -36,6 +36,16 @@ export type {
   // Courses (language + math/chess/music)
   DuolingoCourse,
 
+  // Current learning path and vocabulary
+  DuolingoCurrentCourse,
+  DuolingoPathLevelClientData,
+  DuolingoPathLevel,
+  DuolingoPathUnit,
+  DuolingoPathSection,
+  DuolingoPathSkill,
+  DuolingoLearnedLexeme,
+  DuolingoLearnedLexemesResponse,
+
   // Friends / social
   DuolingoFriendUser,
   DuolingoFollowingResponse,

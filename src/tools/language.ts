@@ -16,6 +16,7 @@ import {
   UsernameFieldSchema,
   computeDependencyOrder,
 } from './helpers.js';
+import { resolveKnownWords, resolveLanguageSkills } from './language-source.js';
 
 const LanguageAbbrSchema = z
   .string()
@@ -125,7 +126,8 @@ export function registerLanguageTools(server: McpServer): void {
     },
     async ({ language_abbr, response_format }) => {
       try {
-        const userData = await getClient().getUserData();
+        const client = getClient();
+        const userData = await client.getUserData();
         const langData = userData.language_data[language_abbr];
         if (!langData) {
           return {
@@ -138,6 +140,11 @@ export function registerLanguageTools(server: McpServer): void {
           };
         }
 
+        const skills = await resolveLanguageSkills(
+          client,
+          userData,
+          language_abbr,
+        );
         const progress = {
           language: langData.language,
           language_string: langData.language_string,
@@ -151,7 +158,10 @@ export function registerLanguageTools(server: McpServer): void {
           // points_rank is absent in the current API response
           points_rank: langData.points_rank,
           streak: langData.streak,
-          num_skills_learned: langData.num_skills_learned,
+          num_skills_learned:
+            langData.num_skills_learned > 0
+              ? langData.num_skills_learned
+              : skills.filter((skill) => skill.learned).length,
           fluency_score: langData.fluency_score,
         };
 
@@ -224,7 +234,8 @@ export function registerLanguageTools(server: McpServer): void {
     },
     async ({ language_abbr, username, response_format }) => {
       try {
-        const userData = await getClient().getUserData(username);
+        const client = getClient();
+        const userData = await client.getUserData(username);
         const langData = userData.language_data[language_abbr];
         if (!langData) {
           return {
@@ -236,9 +247,12 @@ export function registerLanguageTools(server: McpServer): void {
             ],
           };
         }
-        const topics = langData.skills
-          .filter((s) => s.learned)
-          .map((s) => s.title);
+        const skills = await resolveLanguageSkills(
+          client,
+          userData,
+          language_abbr,
+        );
+        const topics = skills.filter((s) => s.learned).map((s) => s.title);
         return {
           content: [
             {
@@ -272,7 +286,8 @@ export function registerLanguageTools(server: McpServer): void {
     },
     async ({ language_abbr, username, response_format }) => {
       try {
-        const userData = await getClient().getUserData(username);
+        const client = getClient();
+        const userData = await client.getUserData(username);
         const langData = userData.language_data[language_abbr];
         if (!langData) {
           return {
@@ -284,9 +299,12 @@ export function registerLanguageTools(server: McpServer): void {
             ],
           };
         }
-        const topics = langData.skills
-          .filter((s) => !s.learned)
-          .map((s) => s.title);
+        const skills = await resolveLanguageSkills(
+          client,
+          userData,
+          language_abbr,
+        );
+        const topics = skills.filter((s) => !s.learned).map((s) => s.title);
         return {
           content: [
             {
@@ -321,7 +339,8 @@ export function registerLanguageTools(server: McpServer): void {
     },
     async ({ language_abbr, username, response_format }) => {
       try {
-        const userData = await getClient().getUserData(username);
+        const client = getClient();
+        const userData = await client.getUserData(username);
         const langData = userData.language_data[language_abbr];
         if (!langData) {
           return {
@@ -333,7 +352,12 @@ export function registerLanguageTools(server: McpServer): void {
             ],
           };
         }
-        const topics = langData.skills
+        const skills = await resolveLanguageSkills(
+          client,
+          userData,
+          language_abbr,
+        );
+        const topics = skills
           .filter((s) => s.learned && s.strength === 1.0)
           .map((s) => s.title);
         return {
@@ -374,7 +398,8 @@ export function registerLanguageTools(server: McpServer): void {
     },
     async ({ language_abbr, username, response_format }) => {
       try {
-        const userData = await getClient().getUserData(username);
+        const client = getClient();
+        const userData = await client.getUserData(username);
         const langData = userData.language_data[language_abbr];
         if (!langData) {
           return {
@@ -386,7 +411,12 @@ export function registerLanguageTools(server: McpServer): void {
             ],
           };
         }
-        const topics = langData.skills
+        const skills = await resolveLanguageSkills(
+          client,
+          userData,
+          language_abbr,
+        );
+        const topics = skills
           .filter((s) => s.learned && s.strength < 1.0)
           .map((s) => s.title);
         return {
@@ -425,7 +455,8 @@ export function registerLanguageTools(server: McpServer): void {
     },
     async ({ language_abbr, username, response_format }) => {
       try {
-        const userData = await getClient().getUserData(username);
+        const client = getClient();
+        const userData = await client.getUserData(username);
         const langData = userData.language_data[language_abbr];
         if (!langData) {
           return {
@@ -438,16 +469,17 @@ export function registerLanguageTools(server: McpServer): void {
           };
         }
 
-        const wordSet = new Set<string>();
-        for (const skill of langData.skills) {
-          if (skill.learned) {
-            for (const word of skill.words) {
-              wordSet.add(word);
-            }
-          }
-        }
-
-        const words = [...wordSet].sort();
+        const skills = await resolveLanguageSkills(
+          client,
+          userData,
+          language_abbr,
+        );
+        const words = await resolveKnownWords(
+          client,
+          userData,
+          language_abbr,
+          skills,
+        );
 
         if (response_format === 'json') {
           return {
@@ -498,7 +530,8 @@ export function registerLanguageTools(server: McpServer): void {
     },
     async ({ language_abbr, username, response_format }) => {
       try {
-        const userData = await getClient().getUserData(username);
+        const client = getClient();
+        const userData = await client.getUserData(username);
         const langData = userData.language_data[language_abbr];
         if (!langData) {
           return {
@@ -511,7 +544,9 @@ export function registerLanguageTools(server: McpServer): void {
           };
         }
 
-        const allSkills = [...langData.skills];
+        const allSkills = [
+          ...(await resolveLanguageSkills(client, userData, language_abbr)),
+        ];
         computeDependencyOrder(allSkills);
 
         const learnedSkills = allSkills

@@ -136,10 +136,12 @@ duolingo-cli review material --language es --topics 5 --limit 10 --json
 ```
 
 Run `duolingo-cli --help` for the complete command grammar. Recent XP and
-activities come from the selected language's calendar. Newer learning-path
-records may not expose legacy skill or word metadata, but they are still
-included in totals and `activities`. Exact historical lesson sentences are not
-available; review sentences are current practice samples and may vary.
+activities come from the selected language's calendar. For newer courses whose
+legacy skill tree is empty, the CLI automatically falls back to the current
+learning path for topics and to Duolingo's learned-lexemes query for known
+words. Some activities still lack a skill ID. Exact historical lesson
+sentences are not available; review sentences are current practice samples and
+may vary.
 
 ---
 

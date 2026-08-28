@@ -28,6 +28,9 @@ import type {
   DuolingoStreakGoalNextOptionsResponse,
   DuolingoSessionRequest,
   DuolingoSessionResponse,
+  DuolingoCurrentCourse,
+  DuolingoLearnedLexeme,
+  DuolingoLearnedLexemesResponse,
 } from './types.js';
 
 const USER_AGENT =
@@ -51,6 +54,16 @@ export class DuolingoClient {
 
   /** Cache of v2 user data keyed by numeric user ID. */
   private readonly userDataV2Cache = new Map<number, DuolingoUserDataV2>();
+
+  private readonly currentCourseCache = new Map<
+    number,
+    DuolingoCurrentCourse
+  >();
+
+  private readonly learnedLexemesCache = new Map<
+    string,
+    DuolingoLearnedLexeme[]
+  >();
 
   /**
    * Cached set of voice names discovered for each language via the session API.
@@ -116,6 +129,59 @@ export class DuolingoClient {
     const fieldsParam = encodeURIComponent(fields.join(','));
     const url = `${BASE_URL}/2023-05-23/users/${userId}?fields=${fieldsParam}&_=${ts}`;
     return this.makeRequest<DuolingoDailyProgress>(url);
+  }
+
+  /** Fetch the active course's path-era skill and unit progress. */
+  async getCurrentCourse(userId?: number): Promise<DuolingoCurrentCourse> {
+    const resolvedUserId = userId ?? (await this.getUserData()).id;
+    const cached = this.currentCourseCache.get(resolvedUserId);
+    if (cached !== undefined) return cached;
+
+    const fields = encodeURIComponent('currentCourse');
+    const url = `${BASE_URL}/2017-06-30/users/${resolvedUserId}?fields=${fields}`;
+    const response = await this.makeRequest<{
+      currentCourse: DuolingoCurrentCourse;
+    }>(url);
+    this.currentCourseCache.set(resolvedUserId, response.currentCourse);
+    return response.currentCourse;
+  }
+
+  /**
+   * Query learned vocabulary for the active path-era course.
+   *
+   * Duolingo exposes this read operation as POST because the request includes
+   * the completed path skills used to calculate the vocabulary result.
+   */
+  async getLearnedLexemes(
+    languageAbbr: string,
+    fromLanguage: string,
+    userId?: number,
+  ): Promise<DuolingoLearnedLexeme[]> {
+    const resolvedUserId = userId ?? (await this.getUserData()).id;
+    const cacheKey = `${resolvedUserId}:${languageAbbr}:${fromLanguage}`;
+    const cached = this.learnedLexemesCache.get(cacheKey);
+    if (cached !== undefined) return [...cached];
+
+    const currentCourse = await this.getCurrentCourse(resolvedUserId);
+    const progressedSkills = this.getProgressedSkills(currentCourse);
+    const learnedLexemes: DuolingoLearnedLexeme[] = [];
+    let startIndex = 0;
+
+    do {
+      const url =
+        `${BASE_URL}/2017-06-30/users/${resolvedUserId}/courses/` +
+        `${encodeURIComponent(languageAbbr)}/${encodeURIComponent(fromLanguage)}/` +
+        `learned-lexemes?sortBy=ALPHABETICAL&startIndex=${startIndex}`;
+      const response = await this.makeRequest<DuolingoLearnedLexemesResponse>(
+        url,
+        { lastTotalLexemeCount: 0, progressedSkills },
+      );
+      learnedLexemes.push(...response.learnedLexemes);
+      startIndex = response.pagination.nextStartIndex;
+    } while (startIndex > 0);
+
+    this.learnedLexemesCache.set(cacheKey, learnedLexemes);
+    return [...learnedLexemes];
   }
 
   /**
@@ -467,6 +533,39 @@ export class DuolingoClient {
   // ---------------------------------------------------------------------------
   // Private helpers
   // ---------------------------------------------------------------------------
+
+  private getProgressedSkills(currentCourse: DuolingoCurrentCourse): {
+    finishedLevels: number;
+    finishedSessions: number;
+    skillId: { id: string };
+  }[] {
+    const progressedSkills: {
+      finishedLevels: number;
+      finishedSessions: number;
+      skillId: { id: string };
+    }[] = [];
+
+    for (const section of currentCourse.pathSectioned) {
+      for (const unit of section.units.slice(0, section.completedUnits)) {
+        for (const level of unit.levels) {
+          if (level.type === 'chest' || level.type === 'unit_review') continue;
+          const skillIds =
+            level.pathLevelClientData.skillId !== undefined
+              ? [level.pathLevelClientData.skillId]
+              : (level.pathLevelClientData.skillIds ?? []);
+          for (const skillId of skillIds) {
+            progressedSkills.push({
+              finishedLevels: 1,
+              finishedSessions: level.finishedSessions,
+              skillId: { id: skillId },
+            });
+          }
+        }
+      }
+    }
+
+    return progressedSkills;
+  }
 
   /**
    * Extract the voice name from a Duolingo TTS CDN URL.

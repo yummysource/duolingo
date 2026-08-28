@@ -35,6 +35,10 @@ import type {
   DuolingoSkill,
   DuolingoTrackingProperties,
   DuolingoCourse,
+  DuolingoCurrentCourse,
+  DuolingoPathLevel,
+  DuolingoPathSkill,
+  DuolingoLearnedLexeme,
   DuolingoFriendUser,
   DuolingoFollowingResponse,
   DuolingoFollowersResponse,
@@ -77,6 +81,8 @@ describe('Package exports: runtime values', () => {
       const expectedMethods = [
         'getUserData',
         'getUserDataById',
+        'getCurrentCourse',
+        'getLearnedLexemes',
         'getUserDataV2',
         'getUserIdByUsername',
         'getFollowing',
@@ -224,6 +230,23 @@ describe('Package exports: type shapes (compile-time)', () => {
       const _learningLanguage: string | undefined = c.learningLanguage;
     };
     expect(typeof _check).toBe('function');
+  });
+
+  it('exports current learning-path and learned-lexeme types', () => {
+    const _checkCourse = (course: DuolingoCurrentCourse) => {
+      const _levels: DuolingoPathLevel[] = course.pathSectioned.flatMap(
+        (section) => section.units.flatMap((unit) => unit.levels),
+      );
+      const _skills: (DuolingoPathSkill | DuolingoPathSkill[])[] =
+        course.skills;
+      const _fromLanguage: string = course.fromLanguage;
+    };
+    const _checkLexeme = (lexeme: DuolingoLearnedLexeme) => {
+      const _text: string = lexeme.text;
+      const _translations: string[] = lexeme.translations;
+    };
+    expect(typeof _checkCourse).toBe('function');
+    expect(typeof _checkLexeme).toBe('function');
   });
 
   it('DuolingoFriendUser has social fields', () => {

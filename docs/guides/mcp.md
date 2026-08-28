@@ -77,15 +77,17 @@ reviewable topics, known words, learned skills, TTS voices, and audio URLs.
 
 ### Review
 
-| Tool                              | Important inputs                                                                                          | Result                                                                   |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `duolingo_get_recent_learning`    | `language_abbr`, `days`, `response_format`                                                                | Language-calendar XP and activities; legacy skill details when available |
-| `duolingo_get_practice_sentences` | `language_abbr`, optional `from_language`, `sessions`, `sentence_limit`, `response_format`                | Deduplicated current prompts, answers, tokens, and TTS URLs              |
-| `duolingo_get_review_material`    | `language_abbr`, optional `from_language`, `topic_limit`, `sessions`, `sentence_limit`, `response_format` | Weak topics, vocabulary, and current practice samples                    |
+| Tool                              | Important inputs                                                                                          | Result                                                                      |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `duolingo_get_recent_learning`    | `language_abbr`, `days`, `response_format`                                                                | Language-calendar XP and activities mapped to legacy or current-path skills |
+| `duolingo_get_practice_sentences` | `language_abbr`, optional `from_language`, `sessions`, `sentence_limit`, `response_format`                | Deduplicated current prompts, answers, tokens, and TTS URLs                 |
+| `duolingo_get_review_material`    | `language_abbr`, optional `from_language`, `topic_limit`, `sessions`, `sentence_limit`, `response_format` | Weak topics, vocabulary, and current practice samples                       |
 
 `from_language` is derived from the matching course when omitted. Sentence
 limits are maxima, and current practice samples are not exact historical lesson
-content.
+content. When the legacy language tree is empty, topic, skill, progress, and
+review tools fall back to the current learning path; known words use the
+learned-lexemes query.
 
 ### Utilities
 

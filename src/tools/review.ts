@@ -10,11 +10,11 @@ import { getClient, type DuolingoClient } from '../client/duolingo.js';
 import type {
   DuolingoCalendarEntry,
   DuolingoChallenge,
-  DuolingoLanguageData,
   DuolingoSkill,
   DuolingoXpGain,
 } from '../client/types.js';
 import { handleError, ResponseFormatSchema } from './helpers.js';
+import { resolveLanguageSkills } from './language-source.js';
 
 const LanguageAbbrSchema = z
   .string()
@@ -451,10 +451,10 @@ function formatRecentLearning(data: {
 }
 
 function selectReviewTopics(
-  languageData: DuolingoLanguageData,
+  skills: DuolingoSkill[],
   topicLimit: number,
 ): ReviewTopic[] {
-  return languageData.skills
+  return skills
     .filter((skill) => skill.learned)
     .sort((a, b) => a.strength - b.strength || a.title.localeCompare(b.title))
     .slice(0, topicLimit)
@@ -599,8 +599,8 @@ export function registerReviewTools(server: McpServer): void {
       title: 'Get Recent Duolingo Learning',
       description:
         "Get the authenticated user's language-specific recent XP activity and map " +
-        'available legacy skill IDs to topics and words. New learning-path activities may ' +
-        'have XP and event metadata without legacy skill details.',
+        'available skill IDs to learning-path topics. Some activities may have XP and ' +
+        'event metadata without a skill ID.',
       inputSchema: {
         language_abbr: LanguageAbbrSchema,
         days: z
@@ -632,8 +632,13 @@ export function registerReviewTools(server: McpServer): void {
 
         const untilTimestamp = Math.floor(Date.now() / 1000);
         const sinceTimestamp = untilTimestamp - days * 24 * 60 * 60;
+        const languageSkills = await resolveLanguageSkills(
+          client,
+          userData,
+          language_abbr,
+        );
         const skillsById = new Map(
-          languageData.skills.map((skill) => [skill.id, skill]),
+          languageSkills.map((skill) => [skill.id, skill]),
         );
         const recentGains = languageData.calendar
           .map(calendarEntryToXpGain)
@@ -652,7 +657,7 @@ export function registerReviewTools(server: McpServer): void {
           activities: recentGains.map((gain) =>
             toRecentActivity(gain, skillsById),
           ),
-          note: 'Recent activity comes from the selected language calendar. New learning-path records may not include legacy skill details, and exact historical lesson sentences cannot be reconstructed.',
+          note: 'Recent activity comes from the selected language calendar. Some records may not include skill details, and exact historical lesson sentences cannot be reconstructed.',
         };
 
         return {
@@ -722,7 +727,12 @@ export function registerReviewTools(server: McpServer): void {
           };
         }
 
-        const topics = selectReviewTopics(languageData, topic_limit);
+        const languageSkills = await resolveLanguageSkills(
+          client,
+          userData,
+          language_abbr,
+        );
+        const topics = selectReviewTopics(languageSkills, topic_limit);
         const resolvedFromLanguage = await resolveFromLanguage(
           client,
           language_abbr,

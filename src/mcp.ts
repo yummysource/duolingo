@@ -4,7 +4,7 @@ import { registerLanguageTools } from './tools/language.js';
 import { registerReviewTools } from './tools/review.js';
 import { registerShopTools } from './tools/shop.js';
 
-export const DUOLINGO_SERVER_VERSION = '1.0.2';
+export const DUOLINGO_SERVER_VERSION = '1.0.3';
 
 const SERVER_INSTRUCTIONS =
   'This server provides read-only access to Duolingo learning data via the ' +

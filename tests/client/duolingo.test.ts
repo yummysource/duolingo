@@ -221,6 +221,93 @@ describe('DuolingoClient', () => {
     });
   });
 
+  describe('learning path data', () => {
+    const currentCourse = {
+      id: 'course-ja-zh',
+      subject: 'language',
+      topic: 'ja',
+      learningLanguage: 'ja',
+      fromLanguage: 'zh-CN',
+      title: 'Japanese',
+      skills: [
+        {
+          id: 'skill-1',
+          name: 'Basics',
+          shortName: 'Basics',
+          levels: 6,
+          finishedLevels: 2,
+          strength: null,
+        },
+      ],
+      pathSectioned: [],
+    };
+
+    it('fetches current learning-path course data', async () => {
+      const client = makeClientWithMockHttp(
+        new Map([
+          ['/users/testuser', { status: 200, data: MOCK_USER_DATA }],
+          ['fields=currentCourse', { status: 200, data: { currentCourse } }],
+        ]),
+      );
+
+      await expect(client.getCurrentCourse()).resolves.toMatchObject({
+        learningLanguage: 'ja',
+        fromLanguage: 'zh-CN',
+      });
+    });
+
+    it('paginates learned lexemes for the current course', async () => {
+      const client = makeClientWithMockHttp(
+        new Map([
+          ['/users/testuser', { status: 200, data: MOCK_USER_DATA }],
+          ['fields=currentCourse', { status: 200, data: { currentCourse } }],
+          [
+            'startIndex=0',
+            {
+              status: 200,
+              data: {
+                learnedLexemes: [
+                  {
+                    text: '日本',
+                    translations: ['Japan'],
+                    audioURL: 'https://example.com/nihon.mp3',
+                    isNew: false,
+                  },
+                ],
+                pagination: { totalLexemes: 2, nextStartIndex: 1 },
+              },
+            },
+          ],
+          [
+            'startIndex=1',
+            {
+              status: 200,
+              data: {
+                learnedLexemes: [
+                  {
+                    text: '学生',
+                    translations: ['student'],
+                    audioURL: 'https://example.com/gakusei.mp3',
+                    isNew: false,
+                  },
+                ],
+                pagination: { totalLexemes: 2, nextStartIndex: 0 },
+              },
+            },
+          ],
+        ]),
+      );
+
+      const words = await client.getLearnedLexemes('ja', 'zh-CN');
+
+      expect(words.map((word) => word.text)).toEqual(['日本', '学生']);
+      const mockPost = (
+        client as unknown as { http: { post: ReturnType<typeof vi.fn> } }
+      ).http.post;
+      expect(mockPost).toHaveBeenCalledTimes(2);
+    });
+  });
+
   // -------------------------------------------------------------------------
   // getUserDataById
   // -------------------------------------------------------------------------

@@ -90,6 +90,106 @@ const MOCK_USER_DATA: DuolingoUserData = {
   },
 };
 
+const PATH_COURSE = {
+  id: 'course-ja-zh',
+  subject: 'language',
+  topic: 'ja',
+  learningLanguage: 'ja',
+  fromLanguage: 'zh-CN',
+  title: 'Japanese',
+  skills: [
+    {
+      id: 'path-basics',
+      name: 'Basics',
+      shortName: 'Basics',
+      levels: 6,
+      finishedLevels: 2,
+      strength: null,
+    },
+    {
+      id: 'path-food',
+      name: 'Food',
+      shortName: 'Food',
+      levels: 6,
+      finishedLevels: 0,
+      strength: null,
+    },
+    {
+      id: 'path-travel',
+      name: 'Travel',
+      shortName: 'Travel',
+      levels: 6,
+      finishedLevels: 1,
+      strength: null,
+    },
+  ],
+  pathSectioned: [
+    {
+      index: 0,
+      completedUnits: 1,
+      totalUnits: 2,
+      units: [
+        {
+          unitIndex: 0,
+          levels: [
+            {
+              type: 'skill',
+              state: 'legendary',
+              finishedSessions: 4,
+              totalSessions: 4,
+              pathLevelClientData: { skillId: 'path-basics' },
+            },
+          ],
+        },
+        {
+          unitIndex: 1,
+          levels: [
+            {
+              type: 'skill',
+              state: 'locked',
+              finishedSessions: 0,
+              totalSessions: 4,
+              pathLevelClientData: { skillId: 'path-food' },
+            },
+            {
+              type: 'skill',
+              state: 'passed',
+              finishedSessions: 4,
+              totalSessions: 4,
+              pathLevelClientData: { skillIds: ['path-travel'] },
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+const PATH_USER_DATA: DuolingoUserData = {
+  ...MOCK_USER_DATA,
+  learning_language_string: 'Japanese',
+  languages: [
+    {
+      language: 'ja',
+      language_string: 'Japanese',
+      learning: true,
+      current_learning: true,
+      level: 10,
+      points: 10000,
+      streak: 365,
+    },
+  ],
+  language_data: {
+    ja: {
+      ...MOCK_USER_DATA.language_data.fr!,
+      language: 'ja',
+      language_string: 'Japanese',
+      num_skills_learned: 0,
+      skills: [],
+    },
+  },
+};
+
 // ---------------------------------------------------------------------------
 // Helper to call a registered tool by name
 // ---------------------------------------------------------------------------
@@ -119,6 +219,11 @@ describe('Language Tools', () => {
           },
         ),
       invalidateCache: vi.fn(),
+      getCurrentCourse: vi.fn().mockResolvedValue(PATH_COURSE),
+      getLearnedLexemes: vi.fn().mockResolvedValue([
+        { text: '日本', translations: ['Japan'] },
+        { text: '学生', translations: ['student'] },
+      ]),
     };
 
     vi.spyOn(duolingoModule, 'getClient').mockReturnValue(
@@ -182,6 +287,16 @@ describe('Language Tools', () => {
       expect(parsed.fluency_score).toBe(0.35);
     });
 
+    it('derives learned skill count from the learning path', async () => {
+      vi.mocked(mockClient.getUserData!).mockResolvedValue(PATH_USER_DATA);
+      const result = await callTool(server, 'duolingo_get_language_progress', {
+        language_abbr: 'ja',
+        response_format: 'json',
+      });
+
+      expect(JSON.parse(result).num_skills_learned).toBe(2);
+    });
+
     it('returns error for unknown language abbreviation', async () => {
       const result = await callTool(server, 'duolingo_get_language_progress', {
         language_abbr: 'xx',
@@ -201,6 +316,16 @@ describe('Language Tools', () => {
       expect(result).toContain('Basics 1');
       expect(result).toContain('Basics 2');
       expect(result).not.toContain('Colors');
+    });
+
+    it('uses learning-path skills when the legacy tree is empty', async () => {
+      vi.mocked(mockClient.getUserData!).mockResolvedValue(PATH_USER_DATA);
+      const result = await callTool(server, 'duolingo_get_known_topics', {
+        language_abbr: 'ja',
+        response_format: 'json',
+      });
+
+      expect(JSON.parse(result)).toEqual(['Basics', 'Travel']);
     });
 
     it('returns JSON list', async () => {
@@ -225,6 +350,16 @@ describe('Language Tools', () => {
       expect(result).toContain('Colors');
       expect(result).not.toContain('Basics 1');
     });
+
+    it('uses learning-path skills when the legacy tree is empty', async () => {
+      vi.mocked(mockClient.getUserData!).mockResolvedValue(PATH_USER_DATA);
+      const result = await callTool(server, 'duolingo_get_unknown_topics', {
+        language_abbr: 'ja',
+        response_format: 'json',
+      });
+
+      expect(JSON.parse(result)).toEqual(['Food']);
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -237,6 +372,16 @@ describe('Language Tools', () => {
       });
       expect(result).toContain('Basics 1');
       expect(result).not.toContain('Basics 2'); // strength 0.7
+    });
+
+    it('maps legendary path skills to golden topics', async () => {
+      vi.mocked(mockClient.getUserData!).mockResolvedValue(PATH_USER_DATA);
+      const result = await callTool(server, 'duolingo_get_golden_topics', {
+        language_abbr: 'ja',
+        response_format: 'json',
+      });
+
+      expect(JSON.parse(result)).toEqual(['Basics']);
     });
   });
 
@@ -251,6 +396,16 @@ describe('Language Tools', () => {
       expect(result).toContain('Basics 2');
       expect(result).not.toContain('Basics 1'); // strength 1.0
       expect(result).not.toContain('Colors'); // not learned
+    });
+
+    it('maps passed path skills to reviewable topics', async () => {
+      vi.mocked(mockClient.getUserData!).mockResolvedValue(PATH_USER_DATA);
+      const result = await callTool(server, 'duolingo_get_reviewable_topics', {
+        language_abbr: 'ja',
+        response_format: 'json',
+      });
+
+      expect(JSON.parse(result)).toEqual(['Travel']);
     });
   });
 
@@ -267,6 +422,16 @@ describe('Language Tools', () => {
       expect(result).toContain('oui');
       expect(result).toContain('non');
       expect(result).not.toContain('rouge'); // from unlearned skill
+    });
+
+    it('uses learned lexemes when path skills contain no words', async () => {
+      vi.mocked(mockClient.getUserData!).mockResolvedValue(PATH_USER_DATA);
+      const result = await callTool(server, 'duolingo_get_known_words', {
+        language_abbr: 'ja',
+        response_format: 'json',
+      });
+
+      expect(JSON.parse(result)).toEqual(['学生', '日本']);
     });
 
     it('returns JSON word list', async () => {
@@ -305,6 +470,18 @@ describe('Language Tools', () => {
       const parsed = JSON.parse(result);
       expect(parsed).toHaveLength(2);
       expect(parsed[0].title).toBe('Basics 1');
+    });
+
+    it('returns learned path skills when the legacy tree is empty', async () => {
+      vi.mocked(mockClient.getUserData!).mockResolvedValue(PATH_USER_DATA);
+      const result = await callTool(server, 'duolingo_get_learned_skills', {
+        language_abbr: 'ja',
+        response_format: 'json',
+      });
+
+      expect(
+        JSON.parse(result).map((skill: { title: string }) => skill.title),
+      ).toEqual(['Basics', 'Travel']);
     });
   });
 

@@ -126,6 +126,46 @@ const MOCK_USER_DATA_V2: DuolingoUserDataV2 = {
   learningLanguage: 'fr',
 };
 
+const PATH_COURSE = {
+  id: 'course-ja-zh',
+  subject: 'language',
+  topic: 'ja',
+  learningLanguage: 'ja',
+  fromLanguage: 'zh-CN',
+  title: 'Japanese',
+  skills: [
+    {
+      id: 'path-unit-1',
+      name: 'Introductions',
+      shortName: 'Introductions',
+      levels: 6,
+      finishedLevels: 2,
+      strength: null,
+    },
+  ],
+  pathSectioned: [
+    {
+      index: 0,
+      completedUnits: 1,
+      totalUnits: 1,
+      units: [
+        {
+          unitIndex: 0,
+          levels: [
+            {
+              type: 'skill',
+              state: 'passed',
+              finishedSessions: 4,
+              totalSessions: 4,
+              pathLevelClientData: { skillId: 'path-unit-1' },
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
 const FIRST_SESSION: DuolingoSessionResponse = {
   challenges: [
     {
@@ -245,6 +285,7 @@ describe('Review Tools', () => {
       getUserData: vi.fn().mockResolvedValue(userData),
       getUserDataV2: vi.fn().mockResolvedValue(MOCK_USER_DATA_V2),
       getUserDataById: vi.fn().mockResolvedValue(dailyProgress),
+      getCurrentCourse: vi.fn().mockResolvedValue(PATH_COURSE),
       getGlobalPracticeSession: vi
         .fn()
         .mockResolvedValueOnce(FIRST_SESSION)
@@ -425,7 +466,12 @@ describe('Review Tools', () => {
 
       expect(parsed.total_xp).toBe(35);
       expect(parsed.activity_count).toBe(2);
-      expect(parsed.skills).toEqual([]);
+      expect(parsed.skills).toHaveLength(1);
+      expect(parsed.skills[0]).toMatchObject({
+        id: 'path-unit-1',
+        title: 'Introductions',
+        xp: 15,
+      });
       expect(parsed.activities).toHaveLength(2);
       expect(parsed.activities[0]).toMatchObject({
         skill_id: null,
@@ -512,6 +558,41 @@ describe('Review Tools', () => {
         parsed.topics.map((topic: { title: string }) => topic.title),
       ).not.toContain('Colors');
       expect(parsed.words).not.toContain('rouge');
+    });
+
+    it('builds material from learning-path topics when legacy skills are empty', async () => {
+      const frenchLanguageData = MOCK_USER_DATA.language_data.fr;
+      if (frenchLanguageData === undefined) {
+        throw new Error('French fixture is missing.');
+      }
+      vi.mocked(mockClient.getUserData!).mockResolvedValue({
+        ...MOCK_USER_DATA,
+        language_data: {
+          ja: {
+            ...frenchLanguageData,
+            language: 'ja',
+            language_string: 'Japanese',
+            skills: [],
+          },
+        },
+      });
+
+      const result = await callTool(server, 'duolingo_get_review_material', {
+        language_abbr: 'ja',
+        from_language: 'zh-CN',
+        topic_limit: 5,
+        sessions: 1,
+        sentence_limit: 1,
+        response_format: 'json',
+      });
+      const parsed = JSON.parse(result);
+
+      expect(parsed.topics).toHaveLength(1);
+      expect(parsed.topics[0]).toMatchObject({
+        id: 'path-unit-1',
+        title: 'Introductions',
+      });
+      expect(parsed.sentences).toHaveLength(1);
     });
 
     it('returns a clear message for an unknown language', async () => {

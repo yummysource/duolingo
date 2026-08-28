@@ -147,6 +147,77 @@ export interface DuolingoUserDataV2 {
   [key: string]: unknown;
 }
 
+export interface DuolingoPathLevelClientData {
+  skillId?: string;
+  skillIds?: string[];
+  teachingObjective?: string;
+  [key: string]: unknown;
+}
+
+export interface DuolingoPathLevel {
+  type: string;
+  state: string;
+  finishedSessions: number;
+  totalSessions: number;
+  pathLevelClientData: DuolingoPathLevelClientData;
+  [key: string]: unknown;
+}
+
+export interface DuolingoPathUnit {
+  unitIndex: number;
+  teachingObjective?: string;
+  levels: DuolingoPathLevel[];
+  [key: string]: unknown;
+}
+
+export interface DuolingoPathSection {
+  index: number;
+  completedUnits: number;
+  totalUnits: number;
+  units: DuolingoPathUnit[];
+  [key: string]: unknown;
+}
+
+export interface DuolingoPathSkill {
+  id: string;
+  name: string;
+  shortName?: string;
+  levels: number;
+  finishedLevels: number;
+  strength: number | null;
+  [key: string]: unknown;
+}
+
+/** Active course details from the path-era Duolingo API. */
+export interface DuolingoCurrentCourse {
+  id: string;
+  subject: string;
+  topic: string;
+  learningLanguage: string;
+  fromLanguage: string;
+  title: string;
+  skills: (DuolingoPathSkill | DuolingoPathSkill[])[];
+  pathSectioned: DuolingoPathSection[];
+  [key: string]: unknown;
+}
+
+export interface DuolingoLearnedLexeme {
+  text: string;
+  translations: string[];
+  audioURL?: string;
+  isNew?: boolean;
+  [key: string]: unknown;
+}
+
+export interface DuolingoLearnedLexemesResponse {
+  learnedLexemes: DuolingoLearnedLexeme[];
+  pagination: {
+    totalLexemes: number;
+    nextStartIndex: number;
+    [key: string]: unknown;
+  };
+}
+
 export interface DuolingoUserIdResponse {
   users: { id: number }[];
 }

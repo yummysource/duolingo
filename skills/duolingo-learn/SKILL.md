@@ -36,10 +36,10 @@ the command result can be shown directly.
 
 For review requests, distinguish the two data sources:
 
-- `review recent` returns language-specific calendar XP and activities. Newer
-  learning paths may omit legacy skill metadata, so preserve the totals and
-  activities even when skills or words are empty. Duolingo does not provide the
-  exact historical lesson sentences through these records.
+- `review recent` returns language-specific calendar XP and activities. The CLI
+  maps skill IDs through either the legacy tree or the current learning path.
+  Preserve records that have no skill ID; Duolingo does not provide exact
+  historical lesson sentences through these records.
 - `review sentences` and the sentence portion of `review material` are current
   global-practice samples, not a replay of lessons the user completed.
 
