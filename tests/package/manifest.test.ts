@@ -27,4 +27,10 @@ describe('npm package manifest', () => {
   it('includes the agent-neutral skill in published files', async () => {
     expect((await readManifest()).files).toContain('skills/duolingo-learn/**');
   });
+
+  it('includes the bilingual README and detailed usage guides', async () => {
+    const files = (await readManifest()).files;
+    expect(files).toContain('README.zh-TW.md');
+    expect(files).toContain('docs/guides/**');
+  });
 });
