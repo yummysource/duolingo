@@ -33,12 +33,60 @@ import type {
   DuolingoLearnedLexeme,
   DuolingoLearnedLexemeOptions,
   DuolingoLearnedLexemesResponse,
+  DuolingoSkillPracticeOptions,
+  DuolingoSkillProgress,
 } from './types.js';
 
 const USER_AGENT =
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36';
 
 const BASE_URL = 'https://www.duolingo.com';
+
+const TOPIC_PRACTICE_CHALLENGE_TYPES = [
+  'assist',
+  'characterIntro',
+  'characterMatch',
+  'characterPuzzle',
+  'characterSelect',
+  'characterTrace',
+  'completeReverseTranslation',
+  'definition',
+  'dialogue',
+  'form',
+  'freeResponse',
+  'gapFill',
+  'judge',
+  'listen',
+  'listenComplete',
+  'listenMatch',
+  'name',
+  'listenComprehension',
+  'listenIsolation',
+  'listenSpeak',
+  'listenTap',
+  'partialListen',
+  'partialReverseTranslate',
+  'patternTapComplete',
+  'readComprehension',
+  'select',
+  'selectPronunciation',
+  'selectTranscription',
+  'syllableTap',
+  'syllableListenTap',
+  'speak',
+  'tapCloze',
+  'tapClozeTable',
+  'tapComplete',
+  'tapCompleteTable',
+  'tapDescribe',
+  'translate',
+  'transliterate',
+  'typeCloze',
+  'typeClozeTable',
+  'typeComplete',
+  'typeCompleteTable',
+  'writeComprehension',
+];
 
 /**
  * Fallback TTS CDN base URL used when the user data does not provide one.
@@ -212,6 +260,76 @@ export class DuolingoClient {
 
     this.learnedLexemesCache.set(cacheKey, learnedLexemes);
     return [...learnedLexemes];
+  }
+
+  /** Query learned vocabulary using only one selected learning-path skill. */
+  async getSkillLearnedLexemes(
+    languageAbbr: string,
+    fromLanguage: string,
+    progress: DuolingoSkillProgress,
+    userId?: number,
+    options: DuolingoLearnedLexemeOptions = {},
+  ): Promise<DuolingoLearnedLexeme[]> {
+    const sortBy = options.sortBy ?? 'ALPHABETICAL';
+    const limit = options.limit;
+    if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) {
+      throw new RangeError('Learned lexeme limit must be a positive integer.');
+    }
+    if (
+      !Number.isInteger(progress.finishedLevels) ||
+      progress.finishedLevels < 0 ||
+      !Number.isInteger(progress.finishedSessions) ||
+      progress.finishedSessions < 0
+    ) {
+      throw new RangeError(
+        'Skill progress values must be non-negative integers.',
+      );
+    }
+
+    const resolvedUserId = userId ?? (await this.getUserData()).id;
+    const progressedSkills = [
+      {
+        finishedLevels: progress.finishedLevels,
+        finishedSessions: progress.finishedSessions,
+        skillId: { id: progress.skillId },
+      },
+    ];
+    const learnedLexemes: DuolingoLearnedLexeme[] = [];
+    let startIndex = 0;
+
+    while (limit === undefined || learnedLexemes.length < limit) {
+      const requestLimit = Math.min(
+        100,
+        limit === undefined ? 100 : limit - learnedLexemes.length,
+      );
+      const url =
+        `${BASE_URL}/2017-06-30/users/${resolvedUserId}/courses/` +
+        `${encodeURIComponent(languageAbbr)}/${encodeURIComponent(fromLanguage)}/` +
+        `learned-lexemes?limit=${requestLimit}&sortBy=${sortBy}&startIndex=${startIndex}`;
+      const response = await this.makeRequest<DuolingoLearnedLexemesResponse>(
+        url,
+        { lastTimeLearnedAt: null, progressedSkills },
+      );
+      const remaining =
+        limit === undefined ? undefined : limit - learnedLexemes.length;
+      learnedLexemes.push(
+        ...(remaining === undefined
+          ? response.learnedLexemes
+          : response.learnedLexemes.slice(0, remaining)),
+      );
+
+      const nextStartIndex = response.pagination.nextStartIndex;
+      if (
+        nextStartIndex === null ||
+        nextStartIndex <= startIndex ||
+        response.learnedLexemes.length === 0
+      ) {
+        break;
+      }
+      startIndex = nextStartIndex;
+    }
+
+    return learnedLexemes;
   }
 
   /**
@@ -483,6 +601,60 @@ export class DuolingoClient {
           );
         }
         // Other HTTP errors (e.g. 404, 500) are non-fatal for voice discovery
+        return null;
+      }
+      throw err;
+    }
+
+    if (resp.status !== 200) return null;
+    return resp.data;
+  }
+
+  /**
+   * Fetch challenge material for one path topic without submitting answers or
+   * completing the returned session.
+   */
+  async getSkillPracticeSession(
+    langAbbr: string,
+    fromLanguage: string,
+    options: DuolingoSkillPracticeOptions,
+  ): Promise<DuolingoSessionResponse | null> {
+    for (const value of [options.levelIndex, options.levelSessionIndex]) {
+      if (!Number.isInteger(value) || value < 0) {
+        throw new RangeError(
+          'Practice level indexes must be non-negative integers.',
+        );
+      }
+    }
+
+    const url = `${BASE_URL}/2023-05-23/sessions`;
+    const data: DuolingoSessionRequest = {
+      challengeTypes: TOPIC_PRACTICE_CHALLENGE_TYPES,
+      fromLanguage,
+      isFinalLevel: false,
+      isV2: true,
+      juicy: true,
+      learningLanguage: langAbbr,
+      levelIndex: options.levelIndex,
+      levelSessionIndex: options.levelSessionIndex,
+      pathExperiments: [],
+      skillIds: [options.skillId],
+      smartTipsVersion: 2,
+      type: 'LEXEME_SKILL_LEVEL_PRACTICE',
+      ...(options.treeId === undefined ? {} : { treeId: options.treeId }),
+    };
+
+    let resp: AxiosResponse<DuolingoSessionResponse>;
+    try {
+      resp = await this.http.post<DuolingoSessionResponse>(url, data);
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response) {
+        const status = err.response.status;
+        if (status === 401 || status === 403) {
+          throw new DuolingoAuthError(
+            'Authentication failed while starting a topic practice session.',
+          );
+        }
         return null;
       }
       throw err;

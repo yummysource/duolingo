@@ -58,6 +58,7 @@ the maintained command grammar and defaults.
 - Course enrolments, friends, and weekly or monthly leaderboards.
 - Hearts, currency balances, shop items, and streak goals.
 - Known vocabulary, latest learned words, and learned skills.
+- Vocabulary and current practice samples for a numbered learning-path topic.
 - Native JSON, CSV, TSV, and Anki-friendly vocabulary export.
 - Recent XP activity mapped to skills and words.
 - Current practice-sentence sampling.
@@ -77,6 +78,7 @@ the maintained command grammar and defaults.
 - “List the latest 10 Japanese words I learned.”
 - “Summarize my Spanish activity from the last 14 days.”
 - “Prepare up to 10 Spanish review sentences based on my weak topics.”
+- “Show the words and five current practice examples for Japanese topic 53.”
 - “Show my profile and then build this week's review bundle.”
 - “Enable 90-capture Japanese vocabulary history, then capture today.”
 
@@ -115,6 +117,9 @@ The Skill deliberately explains these distinctions:
   lessons.
 - Practice sentences are current global-practice samples. They can vary between
   calls and are not a replay of completed lessons.
+- Numbered-topic samples use the one-based order returned by `language skills`.
+  They are generated current challenges, not a complete topic corpus or lesson
+  history, and no answers or session completions are submitted.
 - Sentence limits are maxima. Empty sessions and deduplication can return fewer
   items.
 - Unmapped XP events and events belonging to another course are excluded from

@@ -17,6 +17,7 @@ import { registerAccountTools } from '../../src/tools/account.js';
 import { registerLanguageTools } from '../../src/tools/language.js';
 import { registerReviewTools } from '../../src/tools/review.js';
 import { registerShopTools } from '../../src/tools/shop.js';
+import { registerTopicTools } from '../../src/tools/topic.js';
 import * as duolingoModule from '../../src/client/duolingo.js';
 import type { DuolingoClient } from '../../src/client/duolingo.js';
 import type {
@@ -164,6 +165,7 @@ async function createMcpPair(): Promise<{
   registerLanguageTools(server);
   registerReviewTools(server);
   registerShopTools(server);
+  registerTopicTools(server);
 
   const [serverTransport, clientTransport] =
     InMemoryTransport.createLinkedPair();
@@ -291,6 +293,8 @@ describe('MCP Server: tool discovery', () => {
       'duolingo_get_shop_items',
       'duolingo_get_streak_goal',
       'duolingo_get_streak_info',
+      'duolingo_get_topic_practice',
+      'duolingo_get_topic_vocabulary',
       'duolingo_get_unknown_topics',
       'duolingo_get_user_info',
       'duolingo_get_vocabulary',

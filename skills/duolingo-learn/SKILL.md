@@ -3,18 +3,18 @@ name: duolingo-learn
 description: Use when users want to inspect Duolingo learning data, export vocabulary for CSV or Anki, diagnose CLI authentication or API failures, run a read-only state canary, or manage opt-in local vocabulary history through duolingo-cli.
 metadata:
   cli-package: '@yummysource/duolingo-cli'
-  minimum-cli-version: '1.1.0'
+  minimum-cli-version: '1.2.0'
 ---
 
 # Duolingo Learn
 
 Use `duolingo-cli` for read-only Duolingo learning queries. It provides stable,
 structured commands without requiring separate protocol configuration.
-It requires Node.js 18 or newer and CLI version 1.1.0 or newer.
+It requires Node.js 18 or newer and CLI version 1.2.0 or newer.
 
 ## Before a Query
 
-1. Confirm `duolingo-cli --version` is 1.1.0 or newer. If it is missing or
+1. Confirm `duolingo-cli --version` is 1.2.0 or newer. If it is missing or
    older, stop and ask the user to run
    `npm install -g @yummysource/duolingo-cli@latest`.
 2. Determine whether the operation contacts Duolingo. `doctor` and local
@@ -59,6 +59,11 @@ For review requests, distinguish the two data sources:
   historical lesson sentences through these records.
 - `review sentences` and the sentence portion of `review material` are current
   global-practice samples, not a replay of lessons the user completed.
+- `topic words --topic N` returns lexemes for the one-based topic position from
+  `language skills`. `topic sentences --topic N` returns current generated
+  practice samples for that topic. It is not a complete topic corpus or a
+  historical transcript. For Japanese topic words, include Hepburn romaji and
+  kana readings in the user-facing result using the same rule as recent words.
 
 Sentence `--limit` values are maxima, not guaranteed counts. Sampling,
 deduplication, or empty sessions can return fewer sentences; report the actual

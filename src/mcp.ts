@@ -3,8 +3,9 @@ import { registerAccountTools } from './tools/account.js';
 import { registerLanguageTools } from './tools/language.js';
 import { registerReviewTools } from './tools/review.js';
 import { registerShopTools } from './tools/shop.js';
+import { registerTopicTools } from './tools/topic.js';
 
-export const DUOLINGO_SERVER_VERSION = '1.1.0';
+export const DUOLINGO_SERVER_VERSION = '1.2.0';
 
 const SERVER_INSTRUCTIONS =
   'This server provides read-only access to Duolingo learning data via the ' +
@@ -26,6 +27,7 @@ export function createDuolingoMcpServer(): McpServer {
   registerLanguageTools(server);
   registerReviewTools(server);
   registerShopTools(server);
+  registerTopicTools(server);
 
   return server;
 }

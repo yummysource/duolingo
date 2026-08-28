@@ -198,6 +198,37 @@ describe('runCli', () => {
       args: { language_abbr: 'es', response_format: 'markdown' },
     },
     {
+      argv: ['topic', 'words', '--language', 'ja', '--topic', '53', '--json'],
+      tool: 'duolingo_get_topic_vocabulary',
+      args: {
+        language_abbr: 'ja',
+        topic_position: 53,
+        response_format: 'json',
+      },
+    },
+    {
+      argv: [
+        'topic',
+        'sentences',
+        '--language',
+        'ja',
+        '--topic',
+        '53',
+        '--sessions',
+        '2',
+        '--limit',
+        '10',
+      ],
+      tool: 'duolingo_get_topic_practice',
+      args: {
+        language_abbr: 'ja',
+        topic_position: 53,
+        sessions: 2,
+        sentence_limit: 10,
+        response_format: 'markdown',
+      },
+    },
+    {
       argv: ['review', 'recent', '--language', 'es', '--days', '7', '--json'],
       tool: 'duolingo_get_recent_learning',
       args: { language_abbr: 'es', days: 7, response_format: 'json' },

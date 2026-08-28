@@ -99,11 +99,11 @@ lexeme IDs. Export never invents absent parts of speech or grammatical fields.
 | Area     | Methods                                                                                                      | Notes                                                               |
 | -------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
 | User     | `getUserData`, `getUserDataV2`, `getUserDataById`, `getUserIdByUsername`                                     | Profile, courses, XP activity, and ID resolution                    |
-| Learning | `getCurrentCourse`, `getLearnedLexemes`                                                                      | Active path skills, units, and paginated learned vocabulary         |
+| Learning | `getCurrentCourse`, `getLearnedLexemes`, `getSkillLearnedLexemes`                                            | Active path skills, units, and paginated global or topic vocabulary |
 | Social   | `getFollowing`, `getFollowers`, `getLeaderboard`                                                             | Social graph and leaderboard data                                   |
 | Account  | `getShopItems`, `getHealth`, `getCurrencies`                                                                 | Read-only catalogue and balances                                    |
 | Streak   | `getStreakGoalCurrent`, `getStreakGoalNextOptions`                                                           | Current goal and available next goals                               |
-| Practice | `getGlobalPracticeSession`, `getSession`                                                                     | Current practice samples; `getSession` delegates to global practice |
+| Practice | `getGlobalPracticeSession`, `getSkillPracticeSession`, `getSession`                                          | Current global or topic-scoped practice samples                     |
 | Audio    | `getTtsBaseUrl`, `getLanguageVoices`, `buildAudioUrl`, `populateVoiceUrlDictionary`, `getVoiceUrlDictionary` | TTS discovery and URL construction                                  |
 | Cache    | `invalidateCache`                                                                                            | Clears cached legacy user data                                      |
 
@@ -148,6 +148,11 @@ current randomized samples, may be empty, and may differ between calls.
 For the repository's ready-made aggregation and normalization, use
 `duolingo-cli review ...` or the three Review MCP tools rather than duplicating
 their parsing logic.
+
+For one numbered learning-path topic, use `getTopicVocabulary` or
+`getTopicPracticeMaterial` from the package root. Topic positions are
+one-based. The practice helper reads the returned challenges but never submits
+answers or completes a session.
 
 ## Cache behavior
 

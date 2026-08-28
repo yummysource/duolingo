@@ -402,6 +402,101 @@ describe('DuolingoClient', () => {
         },
       );
     });
+
+    it('queries learned lexemes for exactly one path topic', async () => {
+      const client = makeClientWithMockHttp(
+        new Map([
+          [
+            'learned-lexemes',
+            {
+              status: 200,
+              data: {
+                learnedLexemes: [{ text: '沖縄', translations: ['Okinawa'] }],
+                pagination: { totalLexemes: 1, nextStartIndex: null },
+              },
+            },
+          ],
+        ]),
+      );
+
+      const words = await client.getSkillLearnedLexemes(
+        'ja',
+        'zh-CN',
+        {
+          skillId: 'skill-okinawa',
+          finishedLevels: 1,
+          finishedSessions: 2,
+        },
+        12345,
+      );
+
+      expect(words).toEqual([{ text: '沖縄', translations: ['Okinawa'] }]);
+      const mockPost = (
+        client as unknown as { http: { post: ReturnType<typeof vi.fn> } }
+      ).http.post;
+      expect(mockPost).toHaveBeenCalledWith(
+        expect.stringContaining(
+          '/users/12345/courses/ja/zh-CN/learned-lexemes',
+        ),
+        {
+          lastTimeLearnedAt: null,
+          progressedSkills: [
+            {
+              finishedLevels: 1,
+              finishedSessions: 2,
+              skillId: { id: 'skill-okinawa' },
+            },
+          ],
+        },
+      );
+    });
+
+    it('creates a topic-scoped practice session without completing it', async () => {
+      const client = makeClientWithMockHttp(
+        new Map([
+          [
+            '/2023-05-23/sessions',
+            {
+              status: 200,
+              data: {
+                id: 'session-1',
+                challenges: [{ type: 'translate', prompt: '沖縄へ行きます。' }],
+              },
+            },
+          ],
+        ]),
+      );
+
+      const session = await client.getSkillPracticeSession('ja', 'zh-CN', {
+        skillId: 'skill-okinawa',
+        levelIndex: 3,
+        levelSessionIndex: 2,
+        treeId: 'tree-ja-zh',
+      });
+
+      expect(session?.challenges).toHaveLength(1);
+      const mockHttp = (
+        client as unknown as {
+          http: {
+            post: ReturnType<typeof vi.fn>;
+            put?: ReturnType<typeof vi.fn>;
+          };
+        }
+      ).http;
+      expect(mockHttp.post).toHaveBeenCalledWith(
+        'https://www.duolingo.com/2023-05-23/sessions',
+        expect.objectContaining({
+          fromLanguage: 'zh-CN',
+          learningLanguage: 'ja',
+          skillIds: ['skill-okinawa'],
+          levelIndex: 3,
+          levelSessionIndex: 2,
+          treeId: 'tree-ja-zh',
+          type: 'LEXEME_SKILL_LEVEL_PRACTICE',
+        }),
+      );
+      expect(mockHttp.put).toBeUndefined();
+    });
   });
 
   // -------------------------------------------------------------------------

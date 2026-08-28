@@ -34,11 +34,24 @@ export {
   getVocabularyDataset,
   serializeVocabulary,
 } from './services/vocabulary.js';
+export {
+  getTopicPracticeMaterial,
+  getTopicVocabulary,
+  resolveCourseTopic,
+} from './services/topic.js';
 export type {
   VocabularyWord,
   VocabularyDataset,
   VocabularyExportFormat,
 } from './contracts/vocabulary.js';
+export type {
+  ResolvedCourseTopic,
+  TopicPathLocation,
+  TopicPracticeRequest,
+  TopicPracticeResult,
+  TopicRequest,
+  TopicVocabularyResult,
+} from './services/topic.js';
 
 // All public types
 export type {
@@ -65,6 +78,8 @@ export type {
   DuolingoLearnedLexemeOptions,
   DuolingoLexemeSort,
   DuolingoLearnedLexemesResponse,
+  DuolingoSkillPracticeOptions,
+  DuolingoSkillProgress,
 
   // Friends / social
   DuolingoFriendUser,

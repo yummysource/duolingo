@@ -52,6 +52,8 @@ purchase items, alter progress, or modify account settings.
 | Before/after live state canary      | —   | ✓   | ✓     | —   |
 | Opt-in local snapshots and diffs    | —   | ✓   | ✓     | —   |
 | Topic categories, progress, and TTS | ✓   | —   | —     | ✓   |
+| Numbered-topic vocabulary           | ✓   | ✓   | ✓     | ✓   |
+| Numbered-topic practice samples     | ✓   | ✓   | ✓     | ✓   |
 
 The CLI and Skill intentionally own local files and diagnostics. MCP exposes
 the shared vocabulary object as `structuredContent`; it does not write export
@@ -155,6 +157,8 @@ duolingo-cli language list --abbreviations --json
 duolingo-cli language words --language es --json
 duolingo-cli language recent-words --language ja --limit 10 --json
 duolingo-cli language export --language ja --format anki > japanese-anki.tsv
+duolingo-cli topic words --language ja --topic 53 --json
+duolingo-cli topic sentences --language ja --topic 53 --limit 10 --json
 duolingo-cli review recent --language es --days 7 --json
 duolingo-cli review sentences --language es --limit 10 --json
 duolingo-cli review material --language es --topics 5 --limit 10 --json
@@ -170,6 +174,9 @@ words. Some activities still lack a skill ID. Exact historical lesson
 sentences are not available; review sentences are current practice samples and
 may vary. `language recent-words` follows Duolingo's newest-first learned-date
 ranking, but the API does not expose exact per-word timestamps.
+`topic words` and `topic sentences` use the one-based order shown by
+`language skills`. Topic sentences are current generated samples for that
+topic, not a complete or historical lesson transcript.
 
 ---
 
@@ -293,6 +300,13 @@ All tools are **read-only** — the server never modifies your Duolingo account.
 | `duolingo_get_learned_skills`    | Full skill objects sorted by learning order               |
 | `duolingo_get_language_voices`   | Available TTS voice names for a language                  |
 | `duolingo_get_audio_url`         | Pronunciation audio URL for a word                        |
+
+#### Numbered Topics
+
+| Tool                            | Description                                               |
+| ------------------------------- | --------------------------------------------------------- |
+| `duolingo_get_topic_vocabulary` | Learned lexemes scoped to one active-course topic         |
+| `duolingo_get_topic_practice`   | Current generated prompts and answers scoped to one topic |
 
 #### Review
 
@@ -527,11 +541,13 @@ src/
 │   ├── duolingo.ts    # DuolingoClient — all API methods
 │   ├── types.ts       # TypeScript interfaces for all API responses
 │   └── errors.ts      # Custom error classes
+├── services/          # Vocabulary, topic, and practice normalization
 └── tools/
     ├── account.ts     # Account tools (13)
     ├── language.ts    # Language tools (12)
     ├── review.ts      # Review tools (3)
     ├── shop.ts        # Utility tools (2)
+    ├── topic.ts       # Numbered-topic tools (2)
     └── helpers.ts     # Shared utilities (error handling, Zod schemas)
 skills/
 └── duolingo-learn/    # Portable CLI Skill and command reference
@@ -547,6 +563,8 @@ skills/
 | `/2023-05-23/shop-items`                   | Current     | Shop catalogue                                |
 | `/users/{id}/streak-goal-current`          | Current     | Streak goals                                  |
 | `/2017-06-30/sessions`                     | Current     | TTS voice discovery                           |
+| `/courses/.../learned-lexemes`             | Current     | Global and topic-scoped learned vocabulary    |
+| `/2023-05-23/sessions`                     | Current     | Topic-scoped generated practice challenges    |
 
 ---
 

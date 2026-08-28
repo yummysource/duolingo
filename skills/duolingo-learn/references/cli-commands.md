@@ -78,6 +78,18 @@ the result as words learned within an exact date range.
 and TSV preserve source fields; `anki` is a tab-separated import table with
 Front, Back, Audio URL, Tags, and Stable ID columns.
 
+## Numbered Topics
+
+```bash
+duolingo-cli topic words --language LANG --topic N [--username USER] [--json]
+duolingo-cli topic sentences --language LANG --topic N [--username USER] [--sessions 1..10] [--limit 1..100] [--json]
+```
+
+`N` is the one-based position returned by `language skills`. Topic words use a
+selected-skill learned-lexemes request. Topic sentences are current generated
+samples and may vary; they are not a complete corpus or historical lesson
+transcript. The command never submits answers or completes sessions.
+
 ## Diagnostics and Local History
 
 ```bash

@@ -226,6 +226,19 @@ export interface DuolingoLearnedLexemesResponse {
   };
 }
 
+export interface DuolingoSkillProgress {
+  skillId: string;
+  finishedLevels: number;
+  finishedSessions: number;
+}
+
+export interface DuolingoSkillPracticeOptions {
+  skillId: string;
+  levelIndex: number;
+  levelSessionIndex: number;
+  treeId?: string;
+}
+
 export interface DuolingoUserIdResponse {
   users: { id: number }[];
 }
@@ -351,6 +364,13 @@ export interface DuolingoSessionRequest {
   type: string;
   juicy: boolean;
   smartTipsVersion: number;
+  isFinalLevel?: boolean;
+  isV2?: boolean;
+  levelIndex?: number;
+  levelSessionIndex?: number;
+  pathExperiments?: string[];
+  skillIds?: string[];
+  treeId?: string;
 }
 
 export interface DuolingoChallenge {

@@ -24,6 +24,8 @@ Usage:
   duolingo-cli language recent-words --language LANG [--limit N] [--username USER] [--json]
   duolingo-cli language export --language LANG [--username USER] [--format json|csv|tsv|anki] [--limit N]
   duolingo-cli language skills --language LANG [--username USER] [--json]
+  duolingo-cli topic words --language LANG --topic N [--username USER] [--json]
+  duolingo-cli topic sentences --language LANG --topic N [--username USER] [--sessions N] [--limit N] [--json]
   duolingo-cli review recent --language LANG [--days N] [--json]
   duolingo-cli review sentences --language LANG [--from LANG] [--sessions N] [--limit N] [--json]
   duolingo-cli review material --language LANG [--from LANG] [--topics N] [--sessions N] [--limit N] [--json]
@@ -437,6 +439,49 @@ function buildReviewInvocation(
   throw new CliUsageError(`Unknown command: review ${action ?? ''}`.trim());
 }
 
+function buildTopicInvocation(
+  action: string | undefined,
+  tokens: string[],
+): ToolInvocation {
+  if (action !== 'words' && action !== 'sentences') {
+    throw new CliUsageError(`Unknown command: topic ${action ?? ''}`.trim());
+  }
+  const options = parseOptions(
+    tokens,
+    [
+      '--language',
+      '--topic',
+      '--username',
+      ...(action === 'sentences' ? ['--sessions', '--limit'] : []),
+    ],
+    ['--json'],
+  );
+  const args: Record<string, unknown> = {
+    language_abbr: requireOption(options, '--language'),
+    topic_position: readInteger(options, '--topic', 1, 10_000),
+    response_format: responseFormat(options),
+  };
+  if (args.topic_position === undefined) {
+    throw new CliUsageError('Option --topic is required.');
+  }
+  setOptional(args, 'username', options.values.get('--username'));
+  if (action === 'sentences') {
+    setOptional(args, 'sessions', readInteger(options, '--sessions', 1, 10));
+    setOptional(
+      args,
+      'sentence_limit',
+      readInteger(options, '--limit', 1, 100),
+    );
+  }
+  return {
+    toolName:
+      action === 'words'
+        ? 'duolingo_get_topic_vocabulary'
+        : 'duolingo_get_topic_practice',
+    args,
+  };
+}
+
 function parseVocabularyExport(tokens: string[]): VocabularyExportRequest {
   const options = parseOptions(
     tokens,
@@ -518,6 +563,7 @@ function buildToolInvocation(argv: string[]): ToolInvocation {
   if (group === 'shop') return buildShopInvocation(action, tokens);
   if (group === 'goal') return buildGoalInvocation(action, tokens);
   if (group === 'language') return buildLanguageInvocation(action, tokens);
+  if (group === 'topic') return buildTopicInvocation(action, tokens);
   if (group === 'review') return buildReviewInvocation(action, tokens);
   throw new CliUsageError(`Unknown command: ${argv.join(' ')}`);
 }

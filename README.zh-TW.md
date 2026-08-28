@@ -43,6 +43,8 @@ Duolingo Client 與工具邏輯，不需要為不同使用方式重複實作。
 | 前後狀態 Live Canary         | —   | ✓   | ✓     | —   |
 | 主動啟用的本機快照與差異比較 | —   | ✓   | ✓     | —   |
 | Topic、Progress 與 TTS       | ✓   | —   | —     | ✓   |
+| 指定編號主題的詞彙           | ✓   | ✓   | ✓     | ✓   |
+| 指定編號主題的練習內容       | ✓   | ✓   | ✓     | ✓   |
 
 ## 依情境快速開始
 
@@ -162,6 +164,17 @@ duolingo-cli language export --language ja --format csv > japanese.csv
 duolingo-cli language export --language ja --format anki > japanese-anki.tsv
 ```
 
+### 指定主題
+
+```bash
+duolingo-cli topic words --language ja --topic 53 --json
+duolingo-cli topic sentences --language ja --topic 53 --sessions 1 --limit 10 --json
+```
+
+`--topic` 是 `language skills` 所顯示的一基編號。`topic words` 查詢該主題的
+Learned Lexemes；`topic sentences` 只建立唯讀的主題練習取樣，不送出答案、
+不完成 Session，也不是過去課程的完整逐字稿。
+
 ### 診斷、Canary 與本機快照
 
 ```bash
@@ -258,6 +271,7 @@ MCP Tool 分為：
   與 Audio URL。
 - Review：`duolingo_get_recent_learning`、
   `duolingo_get_practice_sentences`、`duolingo_get_review_material`。
+- Topic：`duolingo_get_topic_vocabulary`、`duolingo_get_topic_practice`。
 - Utilities：語言名稱與縮寫轉換。
 
 所有 Tool 都標記為唯讀、非破壞性。詳見

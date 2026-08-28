@@ -100,6 +100,18 @@ content. When the legacy language tree is empty, topic, skill, progress, and
 review tools fall back to the current learning path; known words use the
 learned-lexemes query.
 
+### Numbered topics
+
+| Tool                            | Important inputs                                                                                        | Result                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `duolingo_get_topic_vocabulary` | `language_abbr`, `topic_position`, optional `username`, `response_format`                               | Learned lexemes scoped to the selected active-course topic  |
+| `duolingo_get_topic_practice`   | `language_abbr`, `topic_position`, optional `username`, `sessions`, `sentence_limit`, `response_format` | Current topic-scoped prompts, answers, tokens, and TTS URLs |
+
+`topic_position` is one-based and matches `duolingo_get_learned_skills`.
+Topic practice creates sessions only to read challenges; it does not submit
+answers or complete sessions. Results are generated samples, not a complete
+or historical lesson transcript.
+
 ### Utilities
 
 Language-name and abbreviation conversion for languages present on the queried

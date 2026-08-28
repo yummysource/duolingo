@@ -119,6 +119,19 @@ duolingo-cli language export --language ja --format csv > japanese.csv
 duolingo-cli language export --language ja --format anki > japanese-anki.tsv
 ```
 
+### Numbered topics
+
+```bash
+duolingo-cli topic words --language LANG --topic N [--username USER] [--json]
+duolingo-cli topic sentences --language LANG --topic N [--username USER] [--sessions 1..10] [--limit 1..100] [--json]
+```
+
+`N` is the one-based position returned by `language skills`. `topic words`
+uses Duolingo's learned-lexemes operation with only that topic's skill and
+progress. `topic sentences` creates current topic-scoped challenge sessions,
+deduplicates their prompts and answers, and never submits answers or completes
+the sessions. The samples may vary and are not a historical transcript.
+
 ### Review
 
 ```bash
