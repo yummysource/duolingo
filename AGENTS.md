@@ -77,7 +77,7 @@ duolingo-cli language skills --language LANG [--username USER] [--json]
 
 # Numbered topics
 duolingo-cli topic words --language LANG --topic N [--username USER] [--json]
-duolingo-cli topic sentences --language LANG --topic N [--username USER] [--sessions 1..10] [--limit 1..100] [--json]
+duolingo-cli topic sentences --language LANG --topic N [--sessions 1..10] [--limit 1..100] [--json]
 
 # Review
 duolingo-cli review recent --language LANG [--days 1..90] [--json]

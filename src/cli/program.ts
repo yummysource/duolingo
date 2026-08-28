@@ -25,7 +25,7 @@ Usage:
   duolingo-cli language export --language LANG [--username USER] [--format json|csv|tsv|anki] [--limit N]
   duolingo-cli language skills --language LANG [--username USER] [--json]
   duolingo-cli topic words --language LANG --topic N [--username USER] [--json]
-  duolingo-cli topic sentences --language LANG --topic N [--username USER] [--sessions N] [--limit N] [--json]
+  duolingo-cli topic sentences --language LANG --topic N [--sessions N] [--limit N] [--json]
   duolingo-cli review recent --language LANG [--days N] [--json]
   duolingo-cli review sentences --language LANG [--from LANG] [--sessions N] [--limit N] [--json]
   duolingo-cli review material --language LANG [--from LANG] [--topics N] [--sessions N] [--limit N] [--json]
@@ -451,7 +451,7 @@ function buildTopicInvocation(
     [
       '--language',
       '--topic',
-      '--username',
+      ...(action === 'words' ? ['--username'] : []),
       ...(action === 'sentences' ? ['--sessions', '--limit'] : []),
     ],
     ['--json'],
@@ -464,7 +464,9 @@ function buildTopicInvocation(
   if (args.topic_position === undefined) {
     throw new CliUsageError('Option --topic is required.');
   }
-  setOptional(args, 'username', options.values.get('--username'));
+  if (action === 'words') {
+    setOptional(args, 'username', options.values.get('--username'));
+  }
   if (action === 'sentences') {
     setOptional(args, 'sessions', readInteger(options, '--sessions', 1, 10));
     setOptional(

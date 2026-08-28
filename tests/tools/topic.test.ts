@@ -11,7 +11,7 @@ describe('Topic Tools', () => {
   beforeEach(() => {
     server = new McpServer({ name: 'test', version: '1.0.0' });
     mockClient = {
-      getUserData: vi.fn().mockResolvedValue({ id: 12345 }),
+      getUserData: vi.fn().mockResolvedValue({ id: 12345, language_data: {} }),
       getCurrentCourse: vi.fn().mockResolvedValue({
         id: 'course-ja-zh',
         subject: 'language',

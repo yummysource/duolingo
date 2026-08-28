@@ -317,6 +317,17 @@ describe('MCP Server: tool discovery', () => {
     }
   });
 
+  it('does not advertise another-user topic practice', async () => {
+    const { tools } = await client.listTools();
+    const tool = tools.find(
+      (candidate) => candidate.name === 'duolingo_get_topic_practice',
+    );
+    const properties = tool?.inputSchema.properties as
+      | Record<string, unknown>
+      | undefined;
+    expect(properties).not.toHaveProperty('username');
+  });
+
   it('advertises and returns the versioned vocabulary output schema', async () => {
     const { tools } = await client.listTools();
     const tool = tools.find(

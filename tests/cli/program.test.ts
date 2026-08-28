@@ -308,6 +308,26 @@ describe('runCli', () => {
     expect(deps.errors.join('')).toContain('--limit');
   });
 
+  it('rejects another username for personalized topic practice', async () => {
+    await expect(
+      runCli(
+        [
+          'topic',
+          'sentences',
+          '--language',
+          'ja',
+          '--topic',
+          '53',
+          '--username',
+          'friend',
+        ],
+        deps,
+      ),
+    ).resolves.toBe(1);
+    expect(deps.runTool).not.toHaveBeenCalled();
+    expect(deps.errors.join('')).toContain('--username');
+  });
+
   it('exports vocabulary in an explicit native format', async () => {
     await expect(
       runCli(

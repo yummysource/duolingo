@@ -62,8 +62,9 @@ For review requests, distinguish the two data sources:
 - `topic words --topic N` returns lexemes for the one-based topic position from
   `language skills`. `topic sentences --topic N` returns current generated
   practice samples for that topic. It is not a complete topic corpus or a
-  historical transcript. For Japanese topic words, include Hepburn romaji and
-  kana readings in the user-facing result using the same rule as recent words.
+  historical transcript and runs only for the authenticated account; do not
+  add `--username`. For Japanese topic words, include Hepburn romaji and kana
+  readings in the user-facing result using the same rule as recent words.
 
 Sentence `--limit` values are maxima, not guaranteed counts. Sampling,
 deduplication, or empty sessions can return fewer sentences; report the actual

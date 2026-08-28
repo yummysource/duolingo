@@ -123,7 +123,7 @@ duolingo-cli language export --language ja --format anki > japanese-anki.tsv
 
 ```bash
 duolingo-cli topic words --language LANG --topic N [--username USER] [--json]
-duolingo-cli topic sentences --language LANG --topic N [--username USER] [--sessions 1..10] [--limit 1..100] [--json]
+duolingo-cli topic sentences --language LANG --topic N [--sessions 1..10] [--limit 1..100] [--json]
 ```
 
 `N` is the one-based position returned by `language skills`. `topic words`

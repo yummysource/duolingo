@@ -644,24 +644,7 @@ export class DuolingoClient {
       ...(options.treeId === undefined ? {} : { treeId: options.treeId }),
     };
 
-    let resp: AxiosResponse<DuolingoSessionResponse>;
-    try {
-      resp = await this.http.post<DuolingoSessionResponse>(url, data);
-    } catch (err) {
-      if (axios.isAxiosError(err) && err.response) {
-        const status = err.response.status;
-        if (status === 401 || status === 403) {
-          throw new DuolingoAuthError(
-            'Authentication failed while starting a topic practice session.',
-          );
-        }
-        return null;
-      }
-      throw err;
-    }
-
-    if (resp.status !== 200) return null;
-    return resp.data;
+    return this.makeRequest<DuolingoSessionResponse>(url, data);
   }
 
   /**

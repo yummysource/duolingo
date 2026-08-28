@@ -5,8 +5,10 @@ import type {
   DuolingoLearnedLexeme,
   DuolingoPathLevel,
   DuolingoPathSkill,
+  DuolingoSkill,
 } from '../client/types.js';
 import { samplePracticeSentences, type PracticeSentence } from './practice.js';
+import { resolveLanguageSkills } from '../tools/language-source.js';
 
 function courseMatchesLanguage(
   course: DuolingoCurrentCourse,
@@ -55,7 +57,9 @@ export interface TopicVocabularyResult {
   words: DuolingoLearnedLexeme[];
 }
 
-export interface TopicPracticeRequest extends TopicRequest {
+export interface TopicPracticeRequest {
+  language: string;
+  topicPosition: number;
   sessions: number;
   sentenceLimit: number;
 }
@@ -204,6 +208,40 @@ export function resolveCourseTopic(
   };
 }
 
+function resolveOrderedTopic(
+  course: DuolingoCurrentCourse,
+  skills: DuolingoSkill[],
+  topicPosition: number,
+): ResolvedCourseTopic {
+  if (!Number.isInteger(topicPosition) || topicPosition < 1) {
+    throw new DuolingoClientError('Topic position must be a positive integer.');
+  }
+  const skill = skills[topicPosition - 1];
+  if (skill === undefined) {
+    throw new DuolingoClientError(
+      `Topic ${topicPosition} does not exist; this course has ${skills.length} topics.`,
+    );
+  }
+  const pathSkill = flattenPathSkills(course.skills).find(
+    (candidate) => candidate.id === skill.id,
+  );
+  const totalLevels = pathSkill?.levels ?? 1;
+  const finishedLevels =
+    pathSkill?.finishedLevels ?? (skill.learned ? totalLevels : 0);
+  return {
+    position: topicPosition,
+    total_topics: skills.length,
+    id: skill.id,
+    name: skill.name,
+    title: skill.title,
+    finished_levels: finishedLevels,
+    total_levels: totalLevels,
+    progress_percent: skill.progress_percent,
+    strength: skill.strength,
+    path: findPathLocation(course, skill.id),
+  };
+}
+
 async function resolveTopicRequest(
   client: DuolingoClient,
   request: TopicRequest,
@@ -219,10 +257,15 @@ async function resolveTopicRequest(
       `Language '${request.language}' is not the active learning-path course.`,
     );
   }
+  const orderedSkills = await resolveLanguageSkills(
+    client,
+    user,
+    request.language,
+  );
   return {
     userId: user.id,
     course,
-    topic: resolveCourseTopic(course, request.topicPosition),
+    topic: resolveOrderedTopic(course, orderedSkills, request.topicPosition),
   };
 }
 

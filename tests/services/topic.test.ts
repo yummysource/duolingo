@@ -71,7 +71,7 @@ const COURSE: DuolingoCurrentCourse = {
 
 function makeClient(): DuolingoClient {
   return {
-    getUserData: vi.fn().mockResolvedValue({ id: 12345 }),
+    getUserData: vi.fn().mockResolvedValue({ id: 12345, language_data: {} }),
     getCurrentCourse: vi.fn().mockResolvedValue(COURSE),
     getSkillLearnedLexemes: vi.fn().mockResolvedValue([
       { text: '沖縄', translations: ['Okinawa'] },
@@ -136,6 +136,56 @@ describe('topic learning services', () => {
         finishedLevels: 2,
         finishedSessions: 2,
       },
+      12345,
+    );
+  });
+
+  it('uses the same legacy topic ordering exposed by language skills', async () => {
+    const client = makeClient();
+    const mocks = client as unknown as {
+      getUserData: ReturnType<typeof vi.fn>;
+      getSkillLearnedLexemes: ReturnType<typeof vi.fn>;
+    };
+    mocks.getUserData.mockResolvedValue({
+      id: 12345,
+      language_data: {
+        ja: {
+          skills: [
+            {
+              id: 'skill-okinawa',
+              name: 'Okinawa',
+              title: 'Okinawa',
+              learned: true,
+              strength: 0.75,
+              progress_percent: 100,
+              words: [],
+              dependencies_name: [],
+            },
+            {
+              id: 'skill-greetings',
+              name: 'Greetings',
+              title: 'Greetings',
+              learned: true,
+              strength: 1,
+              progress_percent: 100,
+              words: [],
+              dependencies_name: [],
+            },
+          ],
+        },
+      },
+    } as never);
+
+    const result = await getTopicVocabulary(client, {
+      language: 'ja',
+      topicPosition: 1,
+    });
+
+    expect(result.topic.id).toBe('skill-okinawa');
+    expect(mocks.getSkillLearnedLexemes).toHaveBeenCalledWith(
+      'ja',
+      'zh-CN',
+      expect.objectContaining({ skillId: 'skill-okinawa' }),
       12345,
     );
   });

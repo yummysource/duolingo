@@ -497,6 +497,20 @@ describe('DuolingoClient', () => {
       );
       expect(mockHttp.put).toBeUndefined();
     });
+
+    it('surfaces topic-practice rate limits instead of reporting an empty session', async () => {
+      const client = makeClientWithMockHttp(
+        new Map([['/2023-05-23/sessions', { status: 429, data: {} }]]),
+      );
+
+      await expect(
+        client.getSkillPracticeSession('ja', 'zh-CN', {
+          skillId: 'skill-okinawa',
+          levelIndex: 1,
+          levelSessionIndex: 6,
+        }),
+      ).rejects.toThrow(DuolingoRateLimitError);
+    });
   });
 
   // -------------------------------------------------------------------------

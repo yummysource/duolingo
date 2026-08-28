@@ -163,7 +163,6 @@ export function registerTopicTools(server: McpServer): void {
       inputSchema: {
         language_abbr: LanguageAbbrSchema,
         topic_position: TopicPositionSchema,
-        username: UsernameFieldSchema,
         sessions: SessionsSchema,
         sentence_limit: SentenceLimitSchema,
         response_format: ResponseFormatSchema,
@@ -178,7 +177,6 @@ export function registerTopicTools(server: McpServer): void {
     async ({
       language_abbr,
       topic_position,
-      username,
       sessions,
       sentence_limit,
       response_format,
@@ -189,7 +187,6 @@ export function registerTopicTools(server: McpServer): void {
           topicPosition: topic_position,
           sessions,
           sentenceLimit: sentence_limit,
-          ...(username === undefined ? {} : { username }),
         });
         const output = {
           ...data,
