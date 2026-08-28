@@ -63,27 +63,30 @@ currency fields. Many workflows need both representations.
 
 ## Build recent-learning data
 
-Recent XP records are returned by `getUserDataById`. Map their `skillId` values
-to the selected language's legacy skills:
+The legacy user response contains a language-specific calendar. Map its
+optional `skill_id` values to legacy skills when those details are available:
 
 ```typescript
 const user = await client.getUserData();
 const spanish = user.language_data.es;
-const activity = await client.getUserDataById(user.id, [
-  'xpGains',
-  'streakData',
-]);
 const skillsById = new Map(spanish.skills.map((skill) => [skill.id, skill]));
 
-const mapped = activity.xpGains.flatMap((gain) => {
-  if (gain.skillId === null) return [];
-  const skill = skillsById.get(gain.skillId);
-  return skill === undefined ? [] : [{ gain, skill }];
+const activity = spanish.calendar.map((entry) => {
+  const timestamp =
+    entry.datetime >= 10_000_000_000 ? entry.datetime : entry.datetime * 1000;
+  return {
+    xp: entry.improvement,
+    practicedAt: new Date(timestamp).toISOString(),
+    eventType: entry.event_type ?? null,
+    skill: entry.skill_id ? (skillsById.get(entry.skill_id) ?? null) : null,
+  };
 });
 ```
 
+New learning-path courses may provide calendar activity without legacy skills.
+Keep those records in XP and activity totals even when `skill` is `null`.
 Duolingo's activity records do not contain the exact prompts and answers shown
-in completed lessons. They support skill, word, timestamp, and XP summaries.
+in completed lessons.
 
 ## Sample current practice material
 

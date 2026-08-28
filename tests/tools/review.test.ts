@@ -219,10 +219,30 @@ describe('Review Tools', () => {
       ],
       streakData: { updatedTimestamp: now },
     };
+    const frenchLanguageData = MOCK_USER_DATA.language_data.fr;
+    if (frenchLanguageData === undefined) {
+      throw new Error('French fixture is missing.');
+    }
+    const userData: DuolingoUserData = {
+      ...MOCK_USER_DATA,
+      language_data: {
+        fr: {
+          ...frenchLanguageData,
+          calendar: dailyProgress.xpGains
+            .filter((gain) => gain.skillId !== 'skill-from-another-course')
+            .map((gain) => ({
+              datetime: gain.time * 1000,
+              improvement: gain.xp,
+              event_type: gain.eventType,
+              skill_id: gain.skillId,
+            })),
+        },
+      },
+    };
 
     server = new McpServer({ name: 'test', version: '1.0.0' });
     mockClient = {
-      getUserData: vi.fn().mockResolvedValue(MOCK_USER_DATA),
+      getUserData: vi.fn().mockResolvedValue(userData),
       getUserDataV2: vi.fn().mockResolvedValue(MOCK_USER_DATA_V2),
       getUserDataById: vi.fn().mockResolvedValue(dailyProgress),
       getGlobalPracticeSession: vi
@@ -349,10 +369,70 @@ describe('Review Tools', () => {
         xp: 15,
         event_type: 'lesson',
       });
-      expect(mockClient.getUserDataById).toHaveBeenCalledWith(12345, [
-        'xpGains',
-        'streakData',
-      ]);
+    });
+
+    it('keeps path activity when a course has no legacy skills', async () => {
+      const now = Math.floor(Date.now() / 1000);
+      const frenchLanguageData = MOCK_USER_DATA.language_data.fr;
+      if (frenchLanguageData === undefined) {
+        throw new Error('French fixture is missing.');
+      }
+      const japaneseUserData: DuolingoUserData = {
+        ...MOCK_USER_DATA,
+        learning_language_string: 'Japanese',
+        languages: [
+          {
+            language: 'ja',
+            language_string: 'Japanese',
+            learning: true,
+            current_learning: true,
+            level: 1,
+            points: 100,
+            streak: 2,
+          },
+        ],
+        language_data: {
+          ja: {
+            ...frenchLanguageData,
+            language: 'ja',
+            language_string: 'Japanese',
+            skills: [],
+            calendar: [
+              {
+                datetime: (now - 3600) * 1000,
+                improvement: 20,
+                event_type: 'lesson',
+                skill_id: null,
+              },
+              {
+                datetime: (now - 7200) * 1000,
+                improvement: 15,
+                event_type: 'practice',
+                skill_id: 'path-unit-1',
+              },
+            ],
+          },
+        },
+      };
+      vi.mocked(mockClient.getUserData!).mockResolvedValue(japaneseUserData);
+
+      const result = await callTool(server, 'duolingo_get_recent_learning', {
+        language_abbr: 'ja',
+        days: 7,
+        response_format: 'json',
+      });
+      const parsed = JSON.parse(result);
+
+      expect(parsed.total_xp).toBe(35);
+      expect(parsed.activity_count).toBe(2);
+      expect(parsed.skills).toEqual([]);
+      expect(parsed.activities).toHaveLength(2);
+      expect(parsed.activities[0]).toMatchObject({
+        skill_id: null,
+        xp: 20,
+        event_type: 'lesson',
+      });
+      expect(mockClient.getUserDataById).not.toHaveBeenCalled();
     });
 
     it('formats recent learning as markdown', async () => {

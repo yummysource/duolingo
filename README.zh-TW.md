@@ -128,7 +128,9 @@ duolingo-cli review sentences --language LANG [--from LANG] [--sessions 1..10] [
 duolingo-cli review material --language LANG [--from LANG] [--topics 1..20] [--sessions 1..10] [--limit 1..100] [--json]
 ```
 
-- `recent` 預設查詢 7 天，將 XP 活動對應到指定語言的 Skill 與單字。
+- `recent` 預設查詢 7 天，從指定語言的 Calendar 取得 XP 與活動；若新版學習
+  路徑沒有舊版 Skill 資料，總 XP 與 `activities` 仍會保留，但 `skills` 與
+  `words` 可能為空。
 - `sentences` 預設抽樣 1 個 Session，最多回傳 20 句目前練習內容。
 - `material` 預設挑選 5 個弱項主題、抽樣 3 個 Session，最多回傳 20 句。
 - `--limit` 是上限而非保證數量；空 Session 與去重可能讓實際結果較少。

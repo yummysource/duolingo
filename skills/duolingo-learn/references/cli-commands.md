@@ -45,8 +45,8 @@ duolingo-cli review sentences --language LANG [--from LANG] [--sessions 1..10] [
 duolingo-cli review material --language LANG [--from LANG] [--topics 1..20] [--sessions 1..10] [--limit 1..100] [--json]
 ```
 
-- `recent` returns recent XP events mapped to learned skills and words. The
-  default window is 7 days.
+- `recent` returns selected-language calendar XP and activities, mapping legacy
+  skill and word details when available. The default window is 7 days.
 - `sentences` samples and deduplicates current practice challenges. The default
   is 1 session and 20 sentences.
 - `material` combines weak learned topics, vocabulary, and current practice
@@ -56,8 +56,8 @@ duolingo-cli review material --language LANG [--from LANG] [--topics 1..20] [--s
 - Omit `--from` to derive the base language from the matching course. Do not
   assume it is English. If the account has multiple matching courses and the
   intended base language is known, pass `--from` explicitly.
-- Recent totals include XP events that can be mapped to skills in the selected
-  language. Unmapped or other-course activity is excluded.
+- Newer learning paths may omit legacy skill IDs. Keep their XP and activity
+  records; `skills` and `words` may be empty even when activity is present.
 
 Example for recent Spanish activity and ten current review sentences:
 

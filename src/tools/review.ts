@@ -8,6 +8,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { getClient, type DuolingoClient } from '../client/duolingo.js';
 import type {
+  DuolingoCalendarEntry,
   DuolingoChallenge,
   DuolingoLanguageData,
   DuolingoSkill,
@@ -331,6 +332,19 @@ function toIsoDate(timestampSeconds: number): string {
   return new Date(timestampSeconds * 1000).toISOString();
 }
 
+function calendarEntryToXpGain(entry: DuolingoCalendarEntry): DuolingoXpGain {
+  const time =
+    entry.datetime >= 10_000_000_000
+      ? Math.floor(entry.datetime / 1000)
+      : Math.floor(entry.datetime);
+  return {
+    skillId: entry.skill_id ?? null,
+    xp: entry.improvement,
+    time,
+    eventType: entry.event_type ?? null,
+  };
+}
+
 function toRecentActivity(
   gain: DuolingoXpGain,
   skillsById: Map<string, DuolingoSkill>,
@@ -584,9 +598,9 @@ export function registerReviewTools(server: McpServer): void {
     {
       title: 'Get Recent Duolingo Learning',
       description:
-        "Get the authenticated user's recent XP activity and map its skill IDs to " +
-        'learned topics and words. Duolingo activity records contain metadata, not the exact ' +
-        'historical challenge text.',
+        "Get the authenticated user's language-specific recent XP activity and map " +
+        'available legacy skill IDs to topics and words. New learning-path activities may ' +
+        'have XP and event metadata without legacy skill details.',
       inputSchema: {
         language_abbr: LanguageAbbrSchema,
         days: z
@@ -616,22 +630,14 @@ export function registerReviewTools(server: McpServer): void {
           };
         }
 
-        const dailyProgress = await client.getUserDataById(userData.id, [
-          'xpGains',
-          'streakData',
-        ]);
         const untilTimestamp = Math.floor(Date.now() / 1000);
         const sinceTimestamp = untilTimestamp - days * 24 * 60 * 60;
         const skillsById = new Map(
           languageData.skills.map((skill) => [skill.id, skill]),
         );
-        const recentGains = dailyProgress.xpGains
-          .filter(
-            (gain) =>
-              gain.time >= sinceTimestamp &&
-              gain.skillId !== null &&
-              skillsById.has(gain.skillId),
-          )
+        const recentGains = languageData.calendar
+          .map(calendarEntryToXpGain)
+          .filter((gain) => gain.time >= sinceTimestamp)
           .sort((a, b) => b.time - a.time);
         const skills = aggregateRecentSkills(recentGains, skillsById);
         const data = {
@@ -646,7 +652,7 @@ export function registerReviewTools(server: McpServer): void {
           activities: recentGains.map((gain) =>
             toRecentActivity(gain, skillsById),
           ),
-          note: 'Recent activity maps XP records to skills; it cannot reconstruct exact historical lesson sentences.',
+          note: 'Recent activity comes from the selected language calendar. New learning-path records may not include legacy skill details, and exact historical lesson sentences cannot be reconstructed.',
         };
 
         return {

@@ -81,11 +81,15 @@ duolingo-cli review sentences --language LANG [--from LANG] [--sessions 1..10] [
 duolingo-cli review material --language LANG [--from LANG] [--topics 1..20] [--sessions 1..10] [--limit 1..100] [--json]
 ```
 
-| Command            | Default behavior                         | Data source                                                   |
-| ------------------ | ---------------------------------------- | ------------------------------------------------------------- |
-| `review recent`    | 7 days                                   | Recent XP events mapped to selected-language skills and words |
-| `review sentences` | 1 session, up to 20 sentences            | Current global-practice samples                               |
-| `review material`  | 5 topics, 3 sessions, up to 20 sentences | Weak learned topics plus current practice samples             |
+| Command            | Default behavior                         | Data source                                                          |
+| ------------------ | ---------------------------------------- | -------------------------------------------------------------------- |
+| `review recent`    | 7 days                                   | Selected-language calendar, with legacy skill mapping when available |
+| `review sentences` | 1 session, up to 20 sentences            | Current global-practice samples                                      |
+| `review material`  | 5 topics, 3 sessions, up to 20 sentences | Weak learned topics plus current practice samples                    |
+
+Newer learning-path courses may return activity and XP without legacy skill
+IDs. In that case `total_xp`, `activity_count`, and `activities` remain useful,
+while `skills` and `words` may be empty.
 
 `--limit` is a maximum, not a guaranteed count. Sampling, empty sessions, and
 deduplication can produce fewer sentences. Omit `--from` to derive the base

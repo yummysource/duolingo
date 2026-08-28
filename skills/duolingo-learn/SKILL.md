@@ -36,8 +36,10 @@ the command result can be shown directly.
 
 For review requests, distinguish the two data sources:
 
-- `review recent` maps recent XP activity to skills and vocabulary. Duolingo
-  does not provide the exact historical lesson sentences through these records.
+- `review recent` returns language-specific calendar XP and activities. Newer
+  learning paths may omit legacy skill metadata, so preserve the totals and
+  activities even when skills or words are empty. Duolingo does not provide the
+  exact historical lesson sentences through these records.
 - `review sentences` and the sentence portion of `review material` are current
   global-practice samples, not a replay of lessons the user completed.
 
